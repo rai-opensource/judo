@@ -30,7 +30,7 @@ classifiers = [
 
 dependencies = [
     "dora-utils",  # dora + qol utils for writing nodes
-    "mujoco>=3.5.0,<3.6",
+    "mujoco>=3.6.0, <3.7.0",
     "numpy",
     "pillow",  # for displaying app logo
     "pycparser",
