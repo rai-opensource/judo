@@ -372,25 +372,20 @@ std::vector<std::shared_ptr<SystemClass::System>> create_systems_vector(const mj
   // Vector to store the systems
   std::vector<std::shared_ptr<SystemClass::System>> systems(num_systems);
 
-  std::shared_ptr<OnnxInterface::Session> reference_session =
-      std::shared_ptr<OnnxInterface::Session>(OnnxInterface::allocateOrtSession(policy_filepath));
-  // Function to create a system in a separate thread
-  auto create_system = [&](int i) {
-    systems[i] = std::make_shared<SystemClass::System>(policy_filepath, reference_model, reference_session);
-  };
-
-  // Vector to hold the threads
-  std::vector<std::thread> threads;
-  threads.reserve(num_systems);
-
-  // Launch threads to create System instances in parallel
-  for (int i = 0; i < num_systems; i++) {
-    threads.emplace_back(create_system, i);
+  if (!reference_model) {
+    throw std::runtime_error("create_systems_vector: reference_model is null");
   }
 
-  // Wait for all threads to finish
-  for (auto& thread : threads) {
-    thread.join();
+  std::shared_ptr<OnnxInterface::Session> reference_session;
+  try {
+    reference_session = OnnxInterface::allocateOrtSession(policy_filepath);
+  } catch (const std::exception& e) {
+    throw std::runtime_error(std::string("create_systems_vector: failed to create ONNX session: ") + e.what());
+  }
+
+  // Create systems sequentially — mj_copyModel is not thread-safe
+  for (int i = 0; i < num_systems; i++) {
+    systems[i] = std::make_shared<SystemClass::System>(policy_filepath, reference_model, reference_session);
   }
 
   return systems;

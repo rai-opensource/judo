@@ -199,3 +199,6 @@ wheelhouse/
 
 # byproduct
 meshes.zip
+
+# generated dataset
+*.h5

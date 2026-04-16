@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
+from mujoco import MjData, MjModel
 
 from judo import MODEL_PATH
 from judo.tasks.spot.spot_base import SpotBase, SpotBaseConfig
@@ -32,12 +33,13 @@ class SpotBoxPushConfig(SpotBaseConfig):
     orientation_threshold: float = 0.5
     fall_penalty: float = 2500.0
     w_controls: float = 0.0
-    goal_position: np.ndarray = np_1d_field(
+    goal_distance_threshold: float = 0.5
+    goal_pos: np.ndarray = np_1d_field(
         np.array([0.0, 0.0, BOX_HALF_LENGTH]),
         names=["x", "y", "z"],
         mins=[-5.0, -5.0, 0.0],
         maxs=[5.0, 5.0, 3.0],
-        vis_name="goal_position",
+        vis_name="goal_pos",
         xyz_vis_indices=[0, 1, None],
     )
 
@@ -51,10 +53,11 @@ class SpotBoxPush(SpotBase[SpotBoxPushConfig]):
 
     def __init__(
         self,
+        model_path: str = XML_PATH,
         config: SpotBoxPushConfig | None = None,
     ) -> None:
         """Initialize the SpotBoxPush task."""
-        super().__init__(model_path=XML_PATH, use_arm=True, config=config)
+        super().__init__(model_path=model_path, use_arm=True, config=config)
         self.body_pose_idx = self.get_joint_position_start_index("base")
         self.object_pose_idx = self.get_joint_position_start_index("box_joint")
         self.object_y_axis_idx = self.get_sensor_start_index("object_y_axis")
@@ -79,9 +82,9 @@ class SpotBoxPush(SpotBase[SpotBoxPushConfig]):
 
         spot_fallen_reward = -self.config.fall_penalty * (body_height <= self.config.spot_fallen_threshold).any(axis=-1)
 
-        goal_reward = -self.config.w_goal * np.linalg.norm(
-            object_pos - self.config.goal_position[None, None], axis=-1
-        ).mean(-1)
+        goal_reward = -self.config.w_goal * np.linalg.norm(object_pos - self.config.goal_pos[None, None], axis=-1).mean(
+            -1
+        )
 
         box_orientation_reward = -self.config.w_orientation * np.abs(
             np.dot(object_y_axis, Z_AXIS) > self.config.orientation_threshold
@@ -104,6 +107,12 @@ class SpotBoxPush(SpotBase[SpotBoxPushConfig]):
             + gripper_proximity_reward
             + controls_reward
         )
+
+    def success(self, model: MjModel, data: MjData, metadata: dict[str, Any] | None = None) -> bool:
+        """Check if the box reached the goal and Spot is still standing."""
+        object_pos = data.qpos[self.object_pose_idx : self.object_pose_idx + 3]
+        at_goal = np.linalg.norm(object_pos - self.config.goal_pos) <= self.config.goal_distance_threshold
+        return bool(at_goal and super().success(model, data, metadata))
 
     @property
     def reset_pose(self) -> np.ndarray:

@@ -13,6 +13,7 @@ from judo.tasks.cost_functions import quadratic_norm
 from judo.utils.fields import np_1d_field
 
 XML_PATH = str(MODEL_PATH / "xml/cylinder_push.xml")
+GOAL_DISTANCE_THRESHOLD = 0.3
 
 
 @slider("w_pusher_proximity", 0.0, 5.0, 0.1)
@@ -91,6 +92,12 @@ class CylinderPush(Task[CylinderPushConfig]):
         assert goal_reward.shape == (batch_size,)
 
         return pusher_reward + velocity_reward + goal_reward
+
+    def success(self, model: mujoco.MjModel, data: mujoco.MjData, metadata: dict[str, Any] | None = None) -> bool:
+        """Check if the cart is close to the goal position."""
+        cart_pos = data.qpos[2:4]
+        goal_pos = self.config.goal_pos[0:2]
+        return bool(np.linalg.norm(cart_pos - goal_pos) < GOAL_DISTANCE_THRESHOLD)
 
     def reset(self) -> None:
         """Resets the model to a default (random) state."""

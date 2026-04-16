@@ -12,6 +12,7 @@ from typing import Any, Generic, TypeVar
 
 import mujoco
 import numpy as np
+from mujoco import MjData, MjModel
 
 from judo import MODEL_PATH
 from judo.tasks.base import Task, TaskConfig
@@ -160,6 +161,7 @@ class SpotBase(Task[ConfigT], Generic[ConfigT]):
             [0, 0, 0] + list(ARM_STOWED_POS) + [0] * 12 + [0, 0, STANDING_HEIGHT_CMD]
         )
 
+        self.body_pose_idx = self.get_joint_position_start_index("base")
         self.reset()
 
     @property
@@ -433,6 +435,15 @@ class SpotBase(Task[ConfigT], Generic[ConfigT]):
                 *self.reset_arm_pos,
             ]
         )
+
+    def optimizer_warm_start(self) -> np.ndarray:
+        """Warm start from default command (arm unstowed, legs standing)."""
+        return self.default_command.copy()
+
+    def success(self, model: MjModel, data: MjData, metadata: dict[str, Any] | None = None) -> bool:
+        """Check that Spot is still standing. Subclasses should AND with super().success()."""
+        body_height = data.qpos[self.body_pose_idx + 2]
+        return bool(body_height > self.config.spot_fallen_threshold)
 
     def reset(self) -> None:
         """Reset the simulation to the default pose."""

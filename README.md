@@ -122,6 +122,7 @@ if __name__ == "__main__":
 ```
 
 To see more information about the available tasks, please refer to [the task README](judo/tasks/README.md).
+For batched MPC trajectory generation, see [run_mpc/README.md](run_mpc/README.md).
 
 ## 3. Running `judo` as a Dependency
 You can easily install `judo` as a dependency in your own project. A few comments:

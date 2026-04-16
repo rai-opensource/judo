@@ -101,6 +101,41 @@ LEG_SOFT_UPPER_JOINT_LIMITS = np.array([0.6, 1.65, -0.3] * N_LEGS)
 ARM_SOFT_LOWER_JOINT_LIMITS = ARM_UNSTOWED_POS - np.array([1.0, 1.0, 0.8, np.pi / 2, 0.7, np.pi / 4, 0])
 ARM_SOFT_UPPER_JOINT_LIMITS = ARM_UNSTOWED_POS + np.array([1.0, 0.8, 0.6, np.pi / 2, 0.9, np.pi / 4, 0])
 
+### Locomotion Policy Constants
+RL_LOCOMOTION_COMMAND_LENGTH = 25
+
+# Isaac<->MuJoCo joint index mappings
+ISAAC_TO_MUJOCO_INDICES_12 = [0, 4, 8, 1, 5, 9, 2, 6, 10, 3, 7, 11]
+ISAAC_TO_MUJOCO_INDICES_19 = [1, 6, 11, 2, 7, 12, 3, 8, 13, 4, 9, 14, 0, 5, 10, 15, 16, 17, 18]
+MUJOCO_TO_ISAAC_INDICES_12 = [0, 3, 6, 9, 1, 4, 7, 10, 2, 5, 8, 11]
+MUJOCO_TO_ISAAC_INDICES_19 = [12, 0, 3, 6, 9, 13, 1, 4, 7, 10, 14, 2, 5, 8, 11, 15, 16, 17, 18]
+
+# Default joint offsets for locomotion policy (Isaac order, 19 joints)
+LOCOMOTION_DEFAULT_JOINTS_OFFSET = (
+    0.0,
+    0.12,
+    -0.12,
+    0.12,
+    -0.12,
+    -0.9,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    1.8,
+    -1.0,
+    -1.0,
+    -1.0,
+    -1.0,
+    0.0,
+    -0.9,
+    0.0,
+    -1.54,
+)
+
+# Default leg offsets for locomotion policy (Isaac order, 12 legs)
+LOCOMOTION_DEFAULT_LEGS_OFFSET = (0.12, -0.12, 0.12, -0.12, 0.5, 0.5, 0.5, 0.5, -1.0, -1.0, -1.0, -1.0)
+
 ### Command Indices
 # Command structure: [base_vel(3), arm(7), legs(12), torso(3)] = 25 dimensions
 BASE_VEL_CMD_INDS = [0, 1, 2]

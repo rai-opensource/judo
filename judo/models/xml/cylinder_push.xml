@@ -20,14 +20,16 @@
     <body name="pusher" pos="0 0 0">
       <joint name="slider_x" damping="4" type="slide" axis="1 0 0" />
       <joint name="slider_y" damping="4" type="slide" axis="0 1 0" />
-      <geom name="pusher" type="cylinder" size="0.25 0.1" mass="1" rgba=".9 .5 .5 1" friction="0"/>
+      <!-- friction must be > 0; zero friction causes NaN in mujoco_warp contact solver -->
+      <geom name="pusher" type="cylinder" size="0.25 0.1" mass="1" rgba=".9 .5 .5 1" friction="0.01"/>
       <site pos="0 0 0.15" name="pusher_site"/>
     </body>
 
     <body name="cart" pos="0 0 0">
       <joint name="slider_cart_x" damping="4" type="slide" axis="1 0 0" />
       <joint name="slider_cart_y" damping="4" type="slide" axis="0 1 0" />
-      <geom name="cart" type="cylinder" size="0.25 0.1" mass="1" rgba=".1 .5 .5 1" friction="0"/>
+      <!-- friction must be > 0; zero friction causes NaN in mujoco_warp contact solver -->
+      <geom name="cart" type="cylinder" size="0.25 0.1" mass="1" rgba=".1 .5 .5 1" friction="0.01"/>
       <site pos="0 0 0.15" name="cart_site"/>
     </body>
   </worldbody>

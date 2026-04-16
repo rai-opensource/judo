@@ -86,9 +86,6 @@ class SpotTireUpright(SpotBase[SpotTireUprightConfig]):
 
     def _setup_sensor_indices(self) -> None:
         """Setup sensor indices for reward computation."""
-        # Body pose index (base joint is first)
-        self.body_pose_idx = self.get_joint_position_start_index("base")
-
         # Object pose index (tire joint)
         self.object_pose_idx = self.get_joint_position_start_index("tire_joint")
 
@@ -331,6 +328,6 @@ class SpotTireUpright(SpotBase[SpotTireUprightConfig]):
         # Get tire y-axis sensor data
         tire_y_axis = data.sensordata[self.tire_y_axis_idx : self.tire_y_axis_idx + 3]
 
-        # Check if y-axis is horizontal (z-component close to 0)
-        orientation_error = np.abs(tire_y_axis[2])
-        return bool(orientation_error <= 0.1)
+        # Check if y-axis is horizontal (z-component close to 0) and Spot is still standing
+        upright = np.abs(tire_y_axis[2]) <= 0.1
+        return bool(upright and super().success(model, data, metadata))

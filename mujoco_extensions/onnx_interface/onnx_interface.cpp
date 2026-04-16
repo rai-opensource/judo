@@ -102,7 +102,9 @@ VectorT Policy::policyInference(VectorT* input_vector) {
 }
 
 std::shared_ptr<Ort::Session> allocateOrtSession(const std::string& policy_filepath) {
-  static Ort::Env env{ORT_LOGGING_LEVEL_WARNING, "mujoco_extensions"};
+  // Ort::Env must outlive all sessions that use it. A single static instance
+  // is shared across the process (Ort::Env is thread-safe).
+  static Ort::Env env(ORT_LOGGING_LEVEL_WARNING, "mujoco_extensions");
   Ort::SessionOptions session_options;
   session_options.SetIntraOpNumThreads(1);
   return std::make_shared<Ort::Session>(env, policy_filepath.c_str(), session_options);

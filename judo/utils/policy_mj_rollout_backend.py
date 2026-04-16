@@ -78,7 +78,7 @@ class PolicyMJRolloutBackend(RolloutBackend):
             x0 = np.tile(x0, (self.num_threads, 1))
 
         if last_policy_output is None:
-            raise ValueError("last_policy_output is required for PolicyMJRolloutBackend")
+            last_policy_output = np.zeros((x0.shape[0], 12))
 
         x0 = np.asarray(x0, dtype=np.float64)
         controls = np.asarray(controls, dtype=np.float64)

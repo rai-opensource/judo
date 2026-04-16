@@ -1,0 +1,28 @@
+{
+    "controller_config": {
+        "horizon": 1.0,
+        "control_freq": 20.0,
+        "spline_order": "zero",
+        "max_opt_iters": 1,
+        "max_num_traces": 5,
+        "action_normalizer": "none"
+    },
+    "task": "cylinder_push",
+    "task_config": {
+        "w_pusher_proximity": 0.5,
+        "w_pusher_velocity": 0.0,
+        "w_cart_position": 0.1,
+        "pusher_goal_offset": 0.25,
+        "goal_pos": [0.0, 0.0]
+    },
+    "optimizer": "cem",
+    "optimizer_config": {
+        "num_rollouts": 32,
+        "num_nodes": 4,
+        "use_noise_ramp": true,
+        "noise_ramp": 2.5,
+        "sigma_min": 0.1,
+        "sigma_max": 1.0,
+        "num_elites": 2
+    }
+}

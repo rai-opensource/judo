@@ -108,6 +108,10 @@ class Task(ABC, Generic[ConfigT]):
         self.data.qvel = np.zeros_like(self.data.qvel)
         mujoco.mj_forward(self.model, self.data)
 
+    def success(self, model: MjModel, data: MjData, metadata: dict[str, Any] | None = None) -> bool:
+        """Check if the task was completed successfully. Override in subclasses."""
+        return False
+
     @property
     def physics_substeps(self) -> int:
         """Number of physics steps per control step."""

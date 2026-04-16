@@ -3,6 +3,7 @@
 """Base class for rollout backends."""
 
 from abc import ABC, abstractmethod
+from typing import Any
 
 import numpy as np
 
@@ -21,8 +22,8 @@ class RolloutBackend(ABC):
         self,
         x0: np.ndarray,
         controls: np.ndarray,
-        last_policy_output: np.ndarray | None = None,
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
+        last_policy_output: Any = None,
+    ) -> tuple[np.ndarray, np.ndarray, Any]:
         """Conduct parallel rollouts.
 
         Args:

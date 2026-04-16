@@ -1,0 +1,39 @@
+{
+    "controller_config": {
+        "horizon": 1.5,
+        "control_freq": 20.0,
+        "spline_order": "linear",
+        "max_opt_iters": 1,
+        "max_num_traces": 5,
+        "action_normalizer": "none"
+    },
+    "task": "spot_tire_upright",
+    "task_config": {
+        "fall_penalty": 10000.0,
+        "spot_fallen_threshold": 0.35,
+        "w_goal": 60.0,
+        "w_controls": 2.0,
+        "orientation_error_smoothing_width": 1.0,
+        "w_tire_orientation": 200.0,
+        "w_gripper_proximity": 10.0,
+        "w_foot_proximity": 5.0,
+        "w_torso_proximity": 5.0,
+        "gripper_too_inside_tire_penalty": 150.0,
+        "gripper_not_above_tire_penalty": 100.0,
+        "goal_pos": [
+            0.0,
+            0.0,
+            0.0
+        ]
+    },
+    "optimizer": "cem",
+    "optimizer_config": {
+        "num_rollouts": 16,
+        "num_nodes": 3,
+        "use_noise_ramp": true,
+        "noise_ramp": 3.5,
+        "sigma_min": 0.1,
+        "sigma_max": 1.0,
+        "num_elites": 3
+    }
+}

@@ -30,13 +30,15 @@ classifiers = [
 
 dependencies = [
     "dora-utils",  # dora + qol utils for writing nodes
-    "mujoco>=3.5.0,<3.6",
+    "h5py",
+    "mujoco>=3.5.0",
     "numpy",
     "pillow",  # for displaying app logo
     "pycparser",
     "requests",  # for sharing GUI link
     "rich",  # for displaying tables in benchmarking
     "robot_descriptions",  # for loading mujoco_menagerie Spot meshes
+    "tyro",
     "scipy",
     "viser>=1.0.0",
 ]
@@ -47,12 +49,13 @@ dependencies = [
 [project.scripts]
 judo = "judo.cli:app"
 benchmark = "judo.cli:benchmark"
+run_mpc = "run_mpc.cli:main"
 
 [tool.hatch.metadata]
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["judo", "mujoco_extensions"]
+packages = ["judo", "mujoco_extensions", "run_mpc"]
 artifacts = ["mujoco_extensions/**/policy_rollout_pybind*.so", "judo/app/asset/*"]
 exclude = [
     "judo/models/meshes",
@@ -84,6 +87,7 @@ dev = [
     "pyright",
     "pytest",
     "pytest-cov",
+    "pytest-timeout",
     "pytest-xdist",
     "ruff",
     "twine",
@@ -100,16 +104,16 @@ testpaths = [
 ]
 
 [tool.pyright]
-include = ["judo", "tests"]
+include = ["judo", "tests", "run_mpc"]
 exclude = [
     "**/__pycache__",
 ]
 defineConstant = { DEBUG = true }
 stubPath = "typings"
 
-reportMissingImports = "warning"
 reportMissingTypeStubs = false
 reportPrivateImportUsage = false
+
 
 pythonVersion = "3.13"
 pythonPlatform = "Linux"
@@ -189,7 +193,7 @@ ignore = [
 
 [tool.pixi.workspace]
 channels = ["conda-forge"]
-platforms = ["linux-64", "win-64", "osx-64", "osx-arm64"]
+platforms = ["linux-64", "win-64", "osx-arm64"]
 
 [tool.pixi.dependencies]
 python = ">=3.10,<3.14"  # mujoco has no 3.14 wheel yet
@@ -214,6 +218,7 @@ build = { cmd = "cmake --build mujoco_extensions/build -j8", depends-on = ["conf
 clean = { cmd = "rm -rf mujoco_extensions/build mujoco_extensions/policy_rollout/*.so", description = "Clean mujoco_extensions build artifacts" }
 upload-meshes = { cmd = "bash scripts/upload_meshes.sh", description = "Zip and upload meshes to latest GitHub release" }
 build-wheel = { cmd = "rm -rf dist && python -m build --wheel --outdir dist && bash scripts/repair_wheel.sh dist/*.whl wheelhouse \"\" $(python -c \"import sys; print(f'cp{sys.version_info[0]}{sys.version_info[1]}')\")", depends-on = ["clean", "build"], description = "Build manylinux wheel with auditwheel" }
+run_mpc = { cmd = "run_mpc", description = "Run batched MPC (pass args after --)" }
 
 [tool.pixi.activation.env]
 LD_LIBRARY_PATH = "$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
@@ -227,10 +232,19 @@ python = "3.12.*"
 [tool.pixi.feature.py313.dependencies]
 python = "3.13.*"
 
+[tool.pixi.feature.mjwarp.dependencies]
+python = ">=3.11,<3.14"
+[tool.pixi.feature.mjwarp.target.linux-64.pypi-dependencies]
+mujoco_warp = ">=3.5.0"
+onnx = "*"
+onnxruntime-gpu = ">=1.24"
+
 [tool.pixi.environments]
 default = { solve-group = "default" }
 docs = { features = ["docs"], solve-group = "default" }
 dev = { features = ["dev", "docs"], solve-group = "default" }
+mjwarp = { features = ["mjwarp"], solve-group = "mjwarp" }
+dev-mjwarp = { features = ["dev", "mjwarp"], solve-group = "mjwarp" }
 py310 = { features = ["dev", "py310"], solve-group = "py310" }
 py311 = { features = ["dev", "py311"], solve-group = "py311" }
 py312 = { features = ["dev", "py312"], solve-group = "py312" }

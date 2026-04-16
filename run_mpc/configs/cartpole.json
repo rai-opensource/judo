@@ -1,0 +1,29 @@
+{
+    "controller_config": {
+        "horizon": 1.0,
+        "control_freq": 20.0,
+        "spline_order": "zero",
+        "max_opt_iters": 1,
+        "max_num_traces": 5,
+        "action_normalizer": "none"
+    },
+    "task": "cartpole",
+    "task_config": {
+        "w_vertical": 10.0,
+        "w_centered": 10.0,
+        "w_velocity": 0.1,
+        "w_control": 0.1,
+        "p_vertical": 0.01,
+        "p_centered": 0.1
+    },
+    "optimizer": "cem",
+    "optimizer_config": {
+        "num_rollouts": 32,
+        "num_nodes": 4,
+        "use_noise_ramp": true,
+        "noise_ramp": 2.5,
+        "sigma_min": 0.1,
+        "sigma_max": 1.0,
+        "num_elites": 2
+    }
+}

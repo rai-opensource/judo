@@ -1,3 +1,16 @@
+# v0.1.0
+
+## Added
+* Added support for parallelization using MJWarp
+  * Parallel simulation backend using MJWarp
+  * GPU accelerated data collection in run_mpc
+
+## Changed
+  * Added an optional GPU test since GPU runners aren't currently available on repo
+
+## Dev
+  * Updated mujoco to `>=3.5.0` to support MJWarp
+
 # v0.0.7
 
 ## Added

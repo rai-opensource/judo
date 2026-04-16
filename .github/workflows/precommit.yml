@@ -18,6 +18,7 @@ jobs:
       - uses: prefix-dev/setup-pixi@v0.9.3
         with:
           pixi-version: latest
+          environments: dev-mjwarp
           cache: true
 
       # ── Stubs cache ────────────────────────────────────────────────
@@ -30,14 +31,14 @@ jobs:
 
       - name: Generate stubs if cache miss
         if: steps.typings-cache.outputs.cache-hit != 'true'
-        run: pixi run -e dev pybind11-stubgen mujoco -o typings/
+        run: pixi run -e dev-mjwarp pybind11-stubgen mujoco -o typings/
 
       # ── Linting & type checking ────────────────────────────────────
       - name: Run Ruff Linter
-        run: pixi run -e dev ruff check judo/ tests/ --output-format=github
+        run: pixi run -e dev-mjwarp ruff check judo/ tests/ --output-format=github
 
       - name: Run Ruff Formatter
-        run: pixi run -e dev ruff format judo/ tests/ --diff
+        run: pixi run -e dev-mjwarp ruff format judo/ tests/ --diff
 
       - name: Run Pyright
-        run: pixi run -e dev pyright
+        run: pixi run -e dev-mjwarp pyright
