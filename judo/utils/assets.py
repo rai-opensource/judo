@@ -38,22 +38,21 @@ def _request_with_retry(
     url: str,
     *,
     retries: int,
-    timeout: float,
-    backoff_time: float,
+    timeout_s: float,
+    backoff_time_s: float,
     **request_kwargs,
 ) -> requests.Response:
-    """Execute an HTTP request with retries."""
+    """Execute an HTTP request with `retries` retries."""
     last_exception: Exception | None = None
-    for attempt in range(retries):
+    for attempt in range(retries + 1):
         try:
-            response = requests.request(method, url, timeout=timeout, **request_kwargs)
+            response = requests.request(method, url, timeout=timeout_s, **request_kwargs)
             response.raise_for_status()
             return response
-        except (requests.ConnectionError, requests.Timeout, requests.HTTPError) as exc:
-            if attempt >= retries - 1:
-                raise
-            last_exception = exc
-            time.sleep(backoff_time)
+        except (requests.ConnectionError, requests.Timeout, requests.HTTPError) as request_exception:
+            last_exception = request_exception
+            if attempt < retries:
+                time.sleep(backoff_time_s)
     if last_exception is not None:
         raise last_exception
     raise RuntimeError("Unexpected retry loop termination in _request_with_retry")
@@ -65,8 +64,8 @@ def download_and_extract_meshes(
     asset_name: str = "meshes.zip",
     tag: str | None = None,
     retries: int = 3,
-    timeout: float = 30.0,
-    backoff_time: float = 1.0,
+    timeout_s: float = 30.0,
+    backoff_time_s: float = 1.0,
 ) -> None:
     """Downloads meshes.zip from the latest public GitHub release and extracts it."""
     extract_path = Path(extract_root).expanduser()
@@ -94,8 +93,8 @@ def download_and_extract_meshes(
             "GET",
             api_url,
             retries=retries,
-            timeout=timeout,
-            backoff_time=backoff_time,
+            timeout_s=timeout_s,
+            backoff_time_s=backoff_time_s,
             headers=headers,
         )
         release_data = response.json()
@@ -116,8 +115,8 @@ def download_and_extract_meshes(
             "GET",
             asset_url,
             retries=retries,
-            timeout=timeout,
-            backoff_time=backoff_time,
+            timeout_s=timeout_s,
+            backoff_time_s=backoff_time_s,
             stream=True,
         ) as r:
             with open(zip_path, "wb") as f:
