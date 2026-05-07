@@ -9,7 +9,7 @@ from typing import Any
 import numpy as np
 from tqdm import tqdm
 
-from judo.app.structs import MujocoState, RenderPose
+from judo.app.structs import RenderPose
 from judo.controller import BatchedControllers as JudoBatchedController
 from judo.controller import Controller as JudoController
 from judo.simulation.hierarchical_mj_simulation import HierarchicalMJSimulation

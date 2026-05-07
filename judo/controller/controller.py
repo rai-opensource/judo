@@ -701,6 +701,7 @@ class BatchedControllers:
             pa_np = np.stack([pa for pa in previous_actions_list if pa is not None], axis=0)
             pa_broadcast = np.repeat(pa_np, self.rollout_backend.num_threads, axis=0)
             import warp as wp  # pyright: ignore[reportMissingImports]  # noqa: PLC0415
+
             self._last_policy_output = wp.array(pa_broadcast, dtype=wp.float32, device=self.rollout_backend.device)
 
 
