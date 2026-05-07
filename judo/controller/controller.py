@@ -460,7 +460,8 @@ class Controller:
         final_kwargs.update(backend_kwargs or {})
 
         if backend_name == "mujoco_hierarchical":
-            # physics_substeps must come from task, cannot be overridden in kwargs
+            # For the built-in hierarchical backend, physics_substeps is task-owned
+            # and should not be overridden at controller construction time.
             if "physics_substeps" in final_kwargs:
                 raise ValueError(
                     f"Cannot specify 'physics_substeps' in rollout_backend_kwargs. "
@@ -469,7 +470,9 @@ class Controller:
                 )
             final_kwargs["physics_substeps"] = self.task.physics_substeps
 
-            # policy_path must come from task registry, cannot be overridden in kwargs
+            # policy_path is currently registry-owned for hierarchical backend wiring.
+            # This keeps policy/model assumptions centralized until hierarchical ONNX
+            # integration is generalized on the C++ side.
             if "policy_path" in final_kwargs:
                 raise ValueError(
                     f"Cannot specify 'policy_path' in rollout_backend_kwargs. "

@@ -57,7 +57,10 @@ class ControllerNode(DoraNode):
         )
 
     def _current_optimizer_name(self) -> str:
-        """Look up the name of the current optimizer from the registry."""
+        """Look up the name of the current optimizer from the registry.
+
+        Returns "cem" as a safe default if no registry entry matches the active optimizer instance.
+        """
         for name, (cls, _) in self.controller.available_optimizers.items():
             if isinstance(self.controller.optimizer, cls):
                 return name

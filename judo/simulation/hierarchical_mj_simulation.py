@@ -157,7 +157,10 @@ class HierarchicalMJSimulation(MJSimulation):
             self._init_cpp_systems(policy_path)
             self._last_policy_output = np.zeros(POLICY_OUTPUT_DIM)
         else:
-            self._systems = None
+            raise ValueError(
+                f"Task '{self.task.name}' does not use a locomotion policy. "
+                "Use MJSimulation instead of HierarchicalMJSimulation for this task."
+            )
 
     @property
     def last_policy_output(self) -> np.ndarray:
