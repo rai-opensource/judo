@@ -1,0 +1,434 @@
+judo.controller.controller
+==========================
+
+.. py:module:: judo.controller.controller
+
+
+
+
+
+
+
+
+Module Contents
+---------------
+
+.. py:data:: RolloutBackendEntry
+
+.. py:data:: DEFAULT_ROLLOUT_BACKEND_REGISTRY
+   :type:  dict[str, RolloutBackendEntry]
+
+.. py:class:: ControllerConfig
+
+   Bases: :py:obj:`judo.config.OverridableConfig`
+
+
+   
+   Base controller config.
+
+   .. py:attribute:: horizon
+      :type:  float
+      :value: 1.0
+
+
+
+   .. py:attribute:: spline_order
+      :type:  Literal['zero', 'linear', 'cubic']
+      :value: 'linear'
+
+
+
+   .. py:attribute:: control_freq
+      :type:  float
+      :value: 20.0
+
+
+
+   .. py:attribute:: max_opt_iters
+      :type:  int
+      :value: 1
+
+
+
+   .. py:attribute:: max_num_traces
+      :type:  int
+      :value: 5
+
+
+
+   .. py:attribute:: action_normalizer
+      :type:  Literal['none', 'min_max', 'running']
+      :value: 'none'
+
+
+
+.. py:class:: Controller(controller_config: ControllerConfig, task: judo.tasks.Task, optimizer: judo.optimizers.Optimizer, rollout_backend: str = 'mujoco', rollout_backend_registry: dict[str, RolloutBackendEntry] | None = None, rollout_backend_kwargs: dict[str, Any] | None = None)
+
+   
+   The controller object.
+
+   .. py:attribute:: task
+
+
+   .. py:attribute:: optimizer
+
+
+   .. py:attribute:: available_optimizers
+
+
+   .. py:attribute:: available_tasks
+
+
+   .. py:attribute:: model
+
+
+   .. py:attribute:: rollout_backend
+      :type:  judo.utils.rollout_backend.RolloutBackend
+
+
+   .. py:attribute:: action_normalizer
+
+
+   .. py:attribute:: system_metadata
+
+
+   .. py:attribute:: states
+
+
+   .. py:attribute:: current_state
+
+
+   .. py:attribute:: sensors
+
+
+   .. py:attribute:: rollout_controls
+
+
+   .. py:attribute:: rewards
+
+
+   .. py:attribute:: traces
+      :value: None
+
+
+
+   .. py:attribute:: trace_sensors
+
+
+   .. py:attribute:: num_trace_elites
+
+
+   .. py:attribute:: num_trace_sensors
+
+
+   .. py:attribute:: sensor_rollout_size
+
+
+   .. py:attribute:: all_traces_rollout_size
+
+
+   .. py:property:: horizon
+      :type: float
+
+
+      
+      Helper function to recalculate the horizon for simulation.
+
+
+   .. py:property:: nu
+      :type: int
+
+
+      
+      Helper function to get the number of control inputs.
+
+
+   .. py:property:: max_num_traces
+      :type: int
+
+
+      
+      Helper function to recalculate the max number of traces for simulation.
+
+
+   .. py:property:: max_opt_iters
+      :type: int
+
+
+      
+      Helper function to recalculate the max number of optimization iterations for simulation.
+
+
+   .. py:property:: spline_order
+      :type: str
+
+
+      
+      Helper function to recalculate the spline order for simulation.
+
+
+   .. py:property:: spline_data
+      :type: judo.app.structs.SplineData
+
+
+      
+      Helper function to get the spline data.
+
+
+   .. py:property:: action_normalizer_type
+      :type: judo.utils.normalization.NormalizerType
+
+
+      
+      Helper function to get the type of action normalizer.
+
+
+   .. py:property:: num_timesteps
+      :type: int
+
+
+      
+      Helper function to recalculate the number of timesteps for simulation.
+
+
+   .. py:property:: rollout_times
+      :type: numpy.ndarray
+
+
+      
+      Helper function to calculate the rollout times based on the horizon length.
+
+
+   .. py:property:: spline_timesteps
+      :type: numpy.ndarray
+
+
+      
+      Helper function to create new timesteps for spline queries.
+
+
+   .. py:property:: optimizer_cfg
+      :type: judo.optimizers.OptimizerConfig
+
+
+      
+      Helper function to get the optimizer config.
+
+
+   .. py:property:: optimizer_cls
+      :type: type
+
+
+      
+      Returns the optimizer class.
+
+
+   .. py:property:: optimizer_config_cls
+      :type: type
+
+
+      
+      Returns the optimizer config class.
+
+
+   .. py:property:: task_config
+      :type: judo.tasks.TaskConfig
+
+
+      
+      Returns the task config, which is uniquely defined by the task.
+
+
+   .. py:property:: time
+      :type: float
+
+
+      
+      Returns the current simulation time.
+
+
+   .. py:property:: controller_cfg
+      :type: ControllerConfig
+
+
+      
+      Returns the controller config.
+
+
+   .. py:method:: update_action() -> None
+
+      
+      Update controller actions from current state/time.
+
+      This method runs the full optimization loop for a single controller.
+      For batched multi-controller optimization, use BatchedControllers instead.
+
+
+   .. py:method:: action(time: float) -> numpy.ndarray
+
+      
+      Current best action of policy.
+
+
+   .. py:method:: compute(data: mujoco.MjData) -> numpy.ndarray
+
+      
+      Compute control action for given MjData state.
+
+      :param data: MuJoCo data object with current state.
+
+      :returns: Control action at the current time.
+
+
+   .. py:method:: update_spline(times: numpy.ndarray, controls: numpy.ndarray) -> None
+
+      
+      Update the spline with new timesteps / controls.
+
+
+   .. py:method:: reset() -> None
+
+      
+      Reset the controls, candidate controls and the spline to their default values.
+
+
+   .. py:method:: update_traces() -> None
+
+      
+      Update traces by extracting data from sensors readings.
+
+      We need to have num_spline_points - 1 line segments. Sensors will initially be of shape
+      (num_rollout x num_timesteps x nsensordata) and needs to end up being in shape
+      (num_elite * num_trace_sensors * size of a single rollout x 2 (first and last point of spline) x 3 (3d pos))
+
+
+   .. py:method:: update_states(state_msg: judo.app.structs.MujocoState) -> None
+
+      
+      Updates the states.
+
+
+.. py:class:: BatchedControllers(controller_config: ControllerConfig, task: judo.tasks.Task, optimizer: judo.optimizers.Optimizer, rollout_backend: judo.utils.rollout_backend.BatchedRolloutBackend)
+
+   
+   Coordinates multiple controllers sharing a single BatchedRolloutBackend.
+
+   This class manages batched rollouts across multiple controllers, executing
+   a single GPU rollout for all controllers at each optimization iteration.
+
+   Usage:
+
+   ::
+
+      # Create shared backend with num_threads per problem and num_problems
+      num_rollouts = 64  # rollouts per controller
+      num_problems = 3   # number of controllers
+      backend = BatchedRolloutBackend(model, num_threads=num_rollouts, num_problems=num_problems)
+
+      # Create batched controller coordinator
+      batched = BatchedControllers(config, task, optimizer, backend)
+
+      # Update all controllers with batched rollouts
+      batched.update_action()
+
+   .. py:attribute:: num_problems
+
+
+   .. py:attribute:: controllers
+      :value: []
+
+
+
+   .. py:attribute:: rollout_backend
+
+
+   .. py:attribute:: timer_sample_controls
+
+
+   .. py:attribute:: timer_rollout
+
+
+   .. py:attribute:: timer_rewards
+
+
+   .. py:attribute:: timer_update_iter
+
+
+   .. py:attribute:: timer_post_opt
+
+
+   .. py:method:: update_action() -> None
+
+      
+      Update all controllers with coordinated batched rollouts.
+
+      This method runs the optimization loop across all controllers,
+      batching their rollouts into a single GPU execution per iteration.
+
+
+   .. py:method:: reset() -> None
+
+      
+      Reset all controllers.
+
+
+   .. py:method:: print_timer_stats() -> None
+
+      
+      Print timing statistics for update_action() breakdown.
+
+
+   .. py:method:: reset_timers() -> None
+
+      
+      Reset all timers.
+
+
+   .. py:method:: update_states(state_msgs: list) -> None
+
+      
+      Update states for all controllers.
+
+      :param state_msgs: List of MujocoState messages, one per controller.
+
+
+   .. py:method:: set_init_previous_actions(previous_actions_list: list[numpy.ndarray | None]) -> None
+
+      
+      Sync previous_actions from sims to the batched policy output state.
+
+      Broadcasts per-problem actions to all threads.
+
+      :param previous_actions_list: List of previous actions arrays, one per controller/problem.
+
+
+.. py:function:: make_spline(times: numpy.ndarray, controls: numpy.ndarray, spline_order: str) -> scipy.interpolate.interp1d
+
+   
+   Helper function for creating spline objects.
+
+   :param times: array of times for knot points, shape (T,).
+   :param controls: (possibly batched) array of controls to interpolate, shape (..., T, m).
+   :param spline_order: Order to use for interpolation. Same as parameter for scipy.interpolate.interp1d.
+   :param extrapolate: Whether to allow extrapolation queries. Default true (for re-initialization).
+
+.. py:function:: make_controller(init_task: str, init_optimizer: str, task_registration_cfg: omegaconf.DictConfig | None = None, optimizer_registration_cfg: omegaconf.DictConfig | None = None, controller_cls: type[Controller] | None = None, **controller_kwargs: Any) -> Controller
+
+   
+   Make a controller.
+
+   :param init_task: The task name to use.
+   :param init_optimizer: The optimizer name to use.
+   :param task_registration_cfg: Optional task registration overrides keyed by task name.
+                                 Each entry must contain ``task`` and ``config`` import paths, and may also define
+                                 ``rollout_backend``\ , ``simulation_backend``\ , and ``locomotion_policy_path``.
+                                 See register_tasks_from_cfg for the exact supported schema.
+   :param optimizer_registration_cfg: Optional optimizer registration overrides keyed by
+                                      optimizer name. Each entry must contain ``optimizer`` and ``config`` import paths.
+                                      See register_optimizers_from_cfg for the exact supported schema.
+   :param controller_cls: Optional controller class to instantiate instead of Controller.
+   :param **controller_kwargs: Additional keyword arguments forwarded to the controller
+                                 constructor.
+
+   :returns: The created Controller instance.
+

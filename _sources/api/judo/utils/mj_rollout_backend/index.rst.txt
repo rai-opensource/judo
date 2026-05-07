@@ -1,0 +1,66 @@
+judo.utils.mj_rollout_backend
+=============================
+
+.. py:module:: judo.utils.mj_rollout_backend
+
+.. autoapi-nested-parse::
+
+   
+   MuJoCo rollout backend for parallel trajectory simulation.
+
+
+
+
+
+
+Module Contents
+---------------
+
+.. py:function:: make_model_data_pairs(model: mujoco.MjModel, num_pairs: int) -> tuple[list[mujoco.MjModel], list[mujoco.MjData]]
+
+   
+   Create model/data pairs for mujoco threaded rollout.
+
+.. py:class:: MJRolloutBackend(model: mujoco.MjModel, num_threads: int)
+
+   Bases: :py:obj:`judo.utils.rollout_backend.RolloutBackend`
+
+
+   
+   Backend for conducting multithreaded rollouts using standard MuJoCo.
+
+   Uses mujoco.rollout for direct physics simulation with controls.
+
+   .. py:attribute:: num_threads
+
+
+   .. py:attribute:: model
+
+
+   .. py:method:: rollout(x0: numpy.ndarray, controls: numpy.ndarray, last_policy_output: numpy.ndarray | None = None) -> tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray | None]
+
+      
+      Conduct parallel rollouts.
+
+      :param x0: Initial state, shape (nq+nv,). Will be tiled to num_threads internally.
+      :param controls: Control inputs, shape (num_threads, num_timesteps, nu).
+      :param last_policy_output: Unused. Accepted for interface compatibility.
+
+      :returns: *Tuple of* --     - states: Rolled out states, shape (num_threads, num_timesteps, nq+nv)
+
+      ::
+
+                   - sensors: Sensor readings, shape (num_threads, num_timesteps, nsensor)
+                   - policy_outputs: Always None for this backend.
+
+
+   .. py:method:: update(num_threads: int) -> None
+
+      
+      Update the number of threads.
+
+      Recreates internal state (model/data pairs) for new thread count.
+
+      :param num_threads: New number of parallel threads.
+
+

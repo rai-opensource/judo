@@ -1,0 +1,61 @@
+judo.tasks.caltech_leap_cube
+============================
+
+.. py:module:: judo.tasks.caltech_leap_cube
+
+
+
+
+
+
+Module Contents
+---------------
+
+.. py:data:: XML_PATH
+   :value: ''
+
+
+.. py:data:: SIM_XML_PATH
+   :value: ''
+
+
+.. py:data:: QPOS_HOME
+
+.. py:class:: CaltechLeapCubeConfig
+
+   Bases: :py:obj:`judo.tasks.leap_cube.LeapCubeConfig`
+
+
+   
+   Reward configuration LEAP cube rotation task.
+
+.. py:class:: CaltechLeapCube(model_path: str = XML_PATH, sim_model_path: str = SIM_XML_PATH)
+
+   Bases: :py:obj:`judo.tasks.leap_cube.LeapCube`
+
+
+   
+   Defines the LEAP cube rotation task.
+
+   .. py:attribute:: name
+      :type:  str
+      :value: 'caltech_leap_cube'
+
+
+
+   .. py:attribute:: config_t
+      :type:  type[CaltechLeapCubeConfig]
+
+
+   .. py:attribute:: goal_pos
+
+
+   .. py:attribute:: goal_quat
+
+
+   .. py:attribute:: qpos_home
+
+
+   .. py:attribute:: reset_command
+
+

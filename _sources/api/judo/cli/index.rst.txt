@@ -1,0 +1,35 @@
+judo.cli
+========
+
+.. py:module:: judo.cli
+
+
+
+
+
+
+Module Contents
+---------------
+
+.. py:data:: CONFIG_PATH
+
+.. py:function:: main_app(cfg: omegaconf.DictConfig) -> None
+
+   
+   Main function to run judo via a hydra configuration yaml file.
+
+.. py:function:: app() -> None
+
+   
+   Entry point for the judo CLI.
+
+.. py:function:: main_benchmark(cfg: omegaconf.DictConfig) -> None
+
+   
+   Benchmarking hydra call.
+
+.. py:function:: benchmark() -> None
+
+   
+   Entry point for benchmarking.
+

@@ -1,0 +1,21 @@
+judo.tasks.cost_functions
+=========================
+
+.. py:module:: judo.tasks.cost_functions
+
+
+
+
+Module Contents
+---------------
+
+.. py:function:: smooth_l1_norm(input: numpy.ndarray, p: float) -> numpy.ndarray
+
+   
+   Computes the smooth L1 norm of the input.
+
+.. py:function:: quadratic_norm(input: numpy.ndarray) -> numpy.ndarray
+
+   
+   Computes the quadratic norm of the input.
+

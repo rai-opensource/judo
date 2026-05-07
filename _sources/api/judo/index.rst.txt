@@ -1,0 +1,33 @@
+judo
+====
+
+.. py:module:: judo
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /api/judo/app/index
+   /api/judo/cli/index
+   /api/judo/config/index
+   /api/judo/controller/index
+   /api/judo/gui/index
+   /api/judo/optimizers/index
+   /api/judo/simulation/index
+   /api/judo/tasks/index
+   /api/judo/utils/index
+   /api/judo/visualizers/index
+
+
+
+
+Package Contents
+----------------
+
+.. py:data:: PACKAGE_ROOT
+
+.. py:data:: MODEL_PATH
+

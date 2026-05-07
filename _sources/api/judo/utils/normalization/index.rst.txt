@@ -1,0 +1,221 @@
+judo.utils.normalization
+========================
+
+.. py:module:: judo.utils.normalization
+
+
+
+
+
+
+
+
+Module Contents
+---------------
+
+.. py:data:: NormalizerType
+
+.. py:class:: MinMaxNormalizerConfig
+
+   
+   Config for MinMaxNormalizer.
+
+   .. py:attribute:: min
+      :type:  numpy.ndarray
+
+
+   .. py:attribute:: max
+      :type:  numpy.ndarray
+
+
+   .. py:attribute:: eps
+      :type:  float
+
+
+.. py:class:: RunningMeanStdNormalizerConfig
+
+   
+   Config for RunningMeanStdNormalizer.
+
+   .. py:attribute:: init_std
+      :type:  float
+
+
+   .. py:attribute:: min_std
+      :type:  float
+
+
+   .. py:attribute:: max_std
+      :type:  float
+
+
+   .. py:attribute:: eps
+      :type:  float
+
+
+.. py:class:: IdentityNormalizerConfig
+
+   
+   Config for IdentityNormalizer.
+
+.. py:data:: NormalizerConfig
+
+.. py:class:: Normalizer(dim: int)
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   
+   Base class for normalizers.
+
+   .. py:attribute:: dim
+
+
+   .. py:method:: normalize(x: numpy.ndarray) -> numpy.ndarray
+      :abstractmethod:
+
+
+      
+      Normalize the data.
+
+      :param x: The data to normalize. Shape=(..., dim).
+
+
+   .. py:method:: denormalize(x: numpy.ndarray) -> numpy.ndarray
+      :abstractmethod:
+
+
+      
+      Denormalize the data.
+
+      :param x: The data to denormalize. Shape=(..., dim).
+
+
+   .. py:method:: update(x: numpy.ndarray) -> None
+
+      
+      Update the normalizer.
+
+      :param x: The data to update the normalizer with. Shape=(batch_size, dim).
+
+
+.. py:class:: IdentityNormalizer(dim: int)
+
+   Bases: :py:obj:`Normalizer`
+
+
+   
+   Normalizer that does nothing.
+
+   .. py:method:: normalize(x: numpy.ndarray) -> numpy.ndarray
+
+      
+      Return the data as is.
+
+
+   .. py:method:: denormalize(x: numpy.ndarray) -> numpy.ndarray
+
+      
+      Return the data as is.
+
+
+.. py:class:: MinMaxNormalizer(dim: int, min: numpy.ndarray, max: numpy.ndarray, eps: float = 1e-06)
+
+   Bases: :py:obj:`Normalizer`
+
+
+   
+   Normalizer that uses min and max values to scale the data to the range [-1, 1].
+
+   .. py:attribute:: min
+
+
+   .. py:attribute:: max
+
+
+   .. py:attribute:: eps
+      :value: 1e-06
+
+
+
+   .. py:attribute:: norm_dims
+
+
+   .. py:method:: normalize(x: numpy.ndarray) -> numpy.ndarray
+
+      
+      Normalize the data.
+
+
+   .. py:method:: denormalize(x: numpy.ndarray) -> numpy.ndarray
+
+      
+      Denormalize the data.
+
+
+.. py:class:: RunningMeanStdNormalizer(dim: int, init_std: float = 1.0, min_std: float = 1e-05, max_std: float = 1000.0, eps: float = 1e-06)
+
+   Bases: :py:obj:`Normalizer`
+
+
+   
+   Normalizer that uses running statistics (mean and std) to scale the data elementwise.
+
+   Each dimension is normalized using its own statistics independently, without using a full covariance matrix.
+
+   .. py:attribute:: eps
+      :value: 1e-06
+
+
+
+   .. py:attribute:: min_std
+      :value: 1e-05
+
+
+
+   .. py:attribute:: max_std
+      :value: 1000.0
+
+
+
+   .. py:attribute:: count
+      :value: 0
+
+
+
+   .. py:attribute:: mean
+
+
+   .. py:attribute:: std
+
+
+   .. py:attribute:: M2
+
+
+   .. py:method:: update(x: numpy.ndarray) -> None
+
+      
+      Update the running statistics.
+
+      :param x: The data to update the running statistics with. Shape=(batch_size, dim).
+
+
+   .. py:method:: normalize(x: numpy.ndarray) -> numpy.ndarray
+
+      
+      Normalize the data.
+
+
+   .. py:method:: denormalize(x: numpy.ndarray) -> numpy.ndarray
+
+      
+      Denormalize the data.
+
+
+.. py:data:: normalizer_registry
+
+.. py:function:: make_normalizer(normalizer_type: NormalizerType, dim: int, **kwargs: NormalizerConfig) -> Normalizer
+
+   
+   Make a normalizer from a string.
+

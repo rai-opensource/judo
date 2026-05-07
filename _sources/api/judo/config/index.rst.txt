@@ -1,0 +1,45 @@
+judo.config
+===========
+
+.. py:module:: judo.config
+
+
+
+
+
+
+Module Contents
+---------------
+
+.. py:class:: OverridableConfig
+
+   
+   A class that provides an interface to switch between its field values depending on an override key.
+
+   .. py:method:: __post_init__() -> None
+
+      
+      Initialize the override key to 'default'.
+
+
+   .. py:method:: set_override(key: str, reset_to_defaults: bool = True) -> None
+
+      
+      Set the overridden values for the config based on the override registry.
+
+      :param key: The key to use for the override.
+      :param reset_to_defaults: If True, reset the values to their defaults if no override is found. This is useful for
+                                when you switch from different non-default overrides to other non-default overrides.
+
+
+.. py:function:: set_config_overrides(override_key: str, cls: type, field_override_values: dict[str, Any]) -> None
+
+   
+   Modify the override registry to include an override key and value.
+
+   Can also be used to choose new override values for an existing key.
+
+   :param override_key: The key to use for the override.
+   :param cls: The class to modify.
+   :param field_override_values: A dictionary of field names and their corresponding override values.
+

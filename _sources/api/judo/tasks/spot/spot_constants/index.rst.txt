@@ -1,0 +1,139 @@
+judo.tasks.spot.spot_constants
+==============================
+
+.. py:module:: judo.tasks.spot.spot_constants
+
+.. autoapi-nested-parse::
+
+   
+   Constants for Spot tasks.
+
+   This file contains joint limits, default positions, and command indices
+   used by Spot locomotion and manipulation tasks.
+   Values are synchronized with starfish/dexterity/spot_interface/spot/constants.py.
+
+
+
+
+Module Contents
+---------------
+
+.. py:data:: SPOT_LOCOMOTION_POLICY_PATH
+
+.. py:data:: DEFAULT_SPOT_ROLLOUT_CUTOFF_TIME
+   :type:  float
+   :value: 0.125
+
+
+.. py:data:: N_LEGS
+   :value: 4
+
+
+.. py:data:: N_LEG_JOINTS
+   :value: 3
+
+
+.. py:data:: POLICY_OUTPUT_DIM
+   :value: 12
+
+
+.. py:data:: LEG_JOINT_NAMES_BOSDYN
+   :value: ['fl_hx', 'fl_hy', 'fl_kn', 'fr_hx', 'fr_hy', 'fr_kn', 'hl_hx', 'hl_hy', 'hl_kn', 'hr_hx',...
+
+
+.. py:data:: ARM_JOINT_NAMES
+   :value: ['arm_sh0', 'arm_sh1', 'arm_el0', 'arm_el1', 'arm_wr0', 'arm_wr1', 'arm_f1x']
+
+
+.. py:data:: GRIPPER_CLOSED_POS
+   :value: 0.0
+
+
+.. py:data:: GRIPPER_OPEN_POS
+   :value: -1.54
+
+
+.. py:data:: LEGS_STANDING_POS
+
+.. py:data:: LEGS_STANDING_POS_RL
+
+.. py:data:: ARM_STOWED_POS
+
+.. py:data:: ARM_UNSTOWED_POS
+
+.. py:data:: STANDING_HEIGHT
+   :value: 0.52
+
+
+.. py:data:: STANDING_HEIGHT_CMD
+   :value: 0.52
+
+
+.. py:data:: LEG_SOFT_LOWER_JOINT_LIMITS
+
+.. py:data:: LEG_SOFT_UPPER_JOINT_LIMITS
+
+.. py:data:: ARM_SOFT_LOWER_JOINT_LIMITS
+
+.. py:data:: ARM_SOFT_UPPER_JOINT_LIMITS
+
+.. py:data:: RL_LOCOMOTION_COMMAND_LENGTH
+   :value: 25
+
+
+.. py:data:: ISAAC_TO_MUJOCO_INDICES_12
+   :value: [0, 4, 8, 1, 5, 9, 2, 6, 10, 3, 7, 11]
+
+
+.. py:data:: ISAAC_TO_MUJOCO_INDICES_19
+   :value: [1, 6, 11, 2, 7, 12, 3, 8, 13, 4, 9, 14, 0, 5, 10, 15, 16, 17, 18]
+
+
+.. py:data:: MUJOCO_TO_ISAAC_INDICES_12
+   :value: [0, 3, 6, 9, 1, 4, 7, 10, 2, 5, 8, 11]
+
+
+.. py:data:: MUJOCO_TO_ISAAC_INDICES_19
+   :value: [12, 0, 3, 6, 9, 13, 1, 4, 7, 10, 14, 2, 5, 8, 11, 15, 16, 17, 18]
+
+
+.. py:data:: LOCOMOTION_DEFAULT_JOINTS_OFFSET
+
+.. py:data:: LOCOMOTION_DEFAULT_LEGS_OFFSET
+
+.. py:data:: BASE_VEL_CMD_INDS
+   :value: [0, 1, 2]
+
+
+.. py:data:: ARM_CMD_INDS
+   :value: [3, 4, 5, 6, 7, 8, 9]
+
+
+.. py:data:: FRONT_LEG_CMD_INDS
+   :value: [10, 11, 12, 13, 14, 15]
+
+
+.. py:data:: TORSO_CMD_INDS
+   :value: [22, 23, 24]
+
+
+.. py:data:: BASE_SOFT_LIMITS
+
+.. py:data:: TORSO_LOWER
+
+.. py:data:: TORSO_UPPER
+
+.. py:data:: Z_AXIS
+
+.. py:data:: TIRE_RADIUS
+   :value: 0.33
+
+
+.. py:data:: TIRE_HALF_WIDTH
+   :value: 0.17
+
+
+.. py:data:: BOX_HALF_LENGTH
+   :value: 0.254
+
+

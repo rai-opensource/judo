@@ -1,0 +1,38 @@
+judo.tasks.spot.spot_utils
+==========================
+
+.. py:module:: judo.tasks.spot.spot_utils
+
+.. autoapi-nested-parse::
+
+   
+   Shared utility functions for Spot tasks.
+
+
+
+
+Module Contents
+---------------
+
+.. py:function:: apply_quat_to_vec(quat: numpy.ndarray, vec: numpy.ndarray) -> numpy.ndarray
+
+   
+   Apply quaternion rotation to a vector.
+
+   This matches dexterity.utils.math.apply_quat_to_vec from starfish.
+
+   :param quat: Quaternion in (w, x, y, z) format, shape (..., 4).
+   :param vec: Vector to rotate, shape (..., 3).
+
+   :returns: Rotated vector, same shape as vec.
+
+.. py:function:: quat_mul(q1: numpy.ndarray, q2: numpy.ndarray) -> numpy.ndarray
+
+   
+   Multiply two quaternions in (w, x, y, z) format.
+
+   :param q1: First quaternion, shape (..., 4).
+   :param q2: Second quaternion, shape (..., 4).
+
+   :returns: Product quaternion, shape (..., 4).
+

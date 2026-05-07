@@ -1,0 +1,91 @@
+judo.controller.batched_spot_locomotion
+=======================================
+
+.. py:module:: judo.controller.batched_spot_locomotion
+
+.. autoapi-nested-parse::
+
+   
+   GPU-batched locomotion controller for Spot hierarchical control.
+
+
+
+
+
+
+Module Contents
+---------------
+
+.. py:function:: build_observation_kernel(qpos: wp.array2d(dtype=wp.float32), qvel: wp.array2d(dtype=wp.float32), cmd: wp.array2d(dtype=wp.float32), prev_actions: wp.array2d(dtype=wp.float32), joints_offset: wp.array(dtype=wp.float32), mj_to_isaac: wp.array(dtype=wp.int32), obs: wp.array2d(dtype=wp.float32)) -> None
+
+   
+   Build 84-dim observation from state, command, and previous actions.
+
+   Per-thread (one thread per batch element):
+     obs[ 0: 3] = quat_rotate_inverse(quat, lin_vel)
+     obs[ 3: 6] = angular velocity
+     obs[ 6: 9] = quat_rotate_inverse(quat, [0, 0, -1])
+     obs[ 9:34] = cmd (25 dims)
+     obs[34:53] = mujoco->isaac reordered joints - offset (19 dims)
+     obs[53:72] = mujoco->isaac reordered joint velocities (19 dims)
+     obs[72:84] = previous actions (12 dims)
+
+.. py:function:: compute_targets_kernel(actions: wp.array2d(dtype=wp.float32), cmd: wp.array2d(dtype=wp.float32), legs_offset: wp.array(dtype=wp.float32), isaac_to_mj: wp.array(dtype=wp.int32), action_scale: float, target_q: wp.array2d(dtype=wp.float32)) -> None
+
+   
+   Post-process policy actions into 19-dim target_q.
+
+   Per-thread:
+
+
+   #. Scale actions and apply offset, then isaac->mujoco reorder for legs
+   #. Per-leg override: if any of 3 cmd joints != 0, use cmd instead
+   #. Arm passthrough: target_q[12:19] = cmd[3:10]
+
+.. py:class:: BatchedSpotLocomotion(model_path: str | pathlib.Path, device: str = 'cuda:0', action_scale: float = 0.2)
+
+   
+   Batched GPU-accelerated locomotion controller for Spot.
+
+   This controller implements the learned locomotion policy that converts
+   high-level commands to target joint positions.
+
+   The controller:
+
+
+   * Takes high-level commands (base velocity, arm/leg positions) from MPC
+   * Runs learned locomotion policy at ~56Hz
+   * Produces target joint positions for PD control
+
+   .. py:attribute:: action_scale
+      :value: 0.2
+
+
+
+   .. py:method:: compute_batch(cmd: warp.array, qpos: warp.array, qvel: warp.array, previous_actions: warp.array | None) -> tuple[warp.array, warp.array]
+
+      
+      Get target joint positions from high-level command (batched interface).
+
+      :param cmd: High-level command (batch_size, 25).
+      :param qpos: Joint positions (batch_size, nq).
+      :param qvel: Joint velocities (batch_size, nv).
+      :param previous_actions: Previous actions (batch_size, POLICY_OUTPUT_DIM) or None.
+
+      :returns: Tuple of (target_q, new_previous_actions) as warp arrays.
+
+
+   .. py:method:: reset() -> None
+
+      
+      Reset internal state (no-op since previous_actions is now external).
+
+
+   .. py:property:: target_frequency
+      :type: float
+
+
+      
+      Returns the target frequency of the low-level controller.
+
+

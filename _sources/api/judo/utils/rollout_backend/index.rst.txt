@@ -1,0 +1,76 @@
+judo.utils.rollout_backend
+==========================
+
+.. py:module:: judo.utils.rollout_backend
+
+.. autoapi-nested-parse::
+
+   
+   Base class for rollout backends.
+
+
+
+
+Module Contents
+---------------
+
+.. py:class:: RolloutBackend
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   
+   Abstract base class for rollout backends.
+
+   Rollout backends conduct parallel trajectory simulations
+   for sampling-based optimization in the controller.
+
+   .. py:attribute:: num_threads
+      :type:  int
+
+
+   .. py:method:: rollout(x0: numpy.ndarray, controls: numpy.ndarray, last_policy_output: Any = None) -> tuple[numpy.ndarray, numpy.ndarray, Any]
+      :abstractmethod:
+
+
+      
+      Conduct parallel rollouts.
+
+      :param x0: Initial state, shape (nq+nv,). Will be tiled to num_threads internally.
+      :param controls: Control inputs, shape (num_threads, num_timesteps, nu).
+      :param last_policy_output: Previous policy outputs, if applicable.
+
+      :returns: *Tuple of* --     - states: Rolled out states, shape (num_threads, num_timesteps, nq+nv)
+
+      ::
+
+                   - sensors: Sensor readings, shape (num_threads, num_timesteps, nsensor)
+                   - policy_outputs: Final policy outputs, or None if not applicable.
+
+
+   .. py:method:: update(num_threads: int) -> None
+      :abstractmethod:
+
+
+      
+      Update the number of threads.
+
+      :param num_threads: New number of parallel threads.
+
+
+.. py:class:: BatchedRolloutBackend
+
+   Bases: :py:obj:`RolloutBackend`, :py:obj:`abc.ABC`
+
+
+   
+   Rollout backend base class for multi-problem batched execution.
+
+   .. py:attribute:: num_problems
+      :type:  int
+
+
+   .. py:attribute:: device
+      :type:  str
+
+

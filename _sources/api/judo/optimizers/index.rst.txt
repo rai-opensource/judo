@@ -1,0 +1,374 @@
+judo.optimizers
+===============
+
+.. py:module:: judo.optimizers
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /api/judo/optimizers/base/index
+   /api/judo/optimizers/cem/index
+   /api/judo/optimizers/mppi/index
+   /api/judo/optimizers/overrides/index
+   /api/judo/optimizers/ps/index
+
+
+
+
+
+
+Package Contents
+----------------
+
+.. py:class:: Optimizer(config: OptimizerConfigT, nu: int, override_task_name: str | None = None)
+
+   Bases: :py:obj:`abc.ABC`, :py:obj:`Generic`\ [\ :py:obj:`OptimizerConfigT`\ ]
+
+
+   
+   Base class for all optimizers.
+
+   .. py:attribute:: config
+
+
+   .. py:attribute:: nu
+
+
+   .. py:property:: num_rollouts
+      :type: int
+
+
+      
+      Get the number of rollouts.
+
+
+   .. py:property:: num_nodes
+      :type: int
+
+
+      
+      Get the number of nodes.
+
+
+   .. py:property:: use_noise_ramp
+      :type: bool
+
+
+      
+      Get the use noise ramp flag.
+
+
+   .. py:property:: noise_ramp
+      :type: float
+
+
+      
+      Get the noise ramp value.
+
+
+   .. py:method:: pre_optimization(old_times: numpy.ndarray, new_times: numpy.ndarray) -> None
+
+      
+      An entrypoint to the optimizer before optimization.
+
+      This is used to update optimizer parameters with new information.
+
+      :param old_times: The old times for spline interpolation right before sampling. Shape=(num_nodes,).
+      :param new_times: The new times for spline interpolation right before sampling. Shape=(num_nodes,).
+
+
+   .. py:method:: stop_cond() -> bool
+
+      
+      Check if the optimization should stop aside from reaching max iters (by default, never).
+
+      :returns: True if the optimization should stop, False otherwise.
+
+
+   .. py:method:: sample_control_knots(nominal_knots: numpy.ndarray) -> numpy.ndarray
+      :abstractmethod:
+
+
+      
+      Samples control knots given a nominal control input.
+
+      :param nominal_knots: The nominal control input to sample from. Shape=(num_nodes, nu).
+
+      :returns: *sampled_knots* -- The sampled control input. Shape=(num_rollouts, num_nodes, nu).
+
+
+   .. py:method:: update_nominal_knots(sampled_knots: numpy.ndarray, rewards: numpy.ndarray) -> numpy.ndarray
+      :abstractmethod:
+
+
+      
+      Update the nominal control knots based on the sampled controls and rewards.
+
+      :param sampled_knots: The sampled control input. Shape=(num_rollouts, num_nodes, nu).
+      :param rewards: The rewards for each sampled control input. Shape=(num_rollouts,).
+
+      :returns: *nominal_knots* -- The updated nominal control input. Shape=(num_nodes, nu).
+
+
+.. py:class:: OptimizerConfig
+
+   Bases: :py:obj:`judo.config.OverridableConfig`
+
+
+   
+   Base class for all optimizer configurations.
+
+   .. py:attribute:: num_rollouts
+      :type:  int
+      :value: 16
+
+
+
+   .. py:attribute:: num_nodes
+      :type:  int
+      :value: 4
+
+
+
+   .. py:attribute:: use_noise_ramp
+      :type:  bool
+      :value: False
+
+
+
+   .. py:attribute:: noise_ramp
+      :type:  float
+      :value: 2.5
+
+
+
+.. py:class:: CrossEntropyMethod(config: CrossEntropyMethodConfig, nu: int)
+
+   Bases: :py:obj:`judo.optimizers.base.Optimizer`\ [\ :py:obj:`CrossEntropyMethodConfig`\ ]
+
+
+   
+   The cross-entropy method.
+
+   .. py:attribute:: sigma
+
+
+   .. py:property:: sigma_min
+      :type: float
+
+
+      
+      Get the minimum sigma value.
+
+
+   .. py:property:: sigma_max
+      :type: float
+
+
+      
+      Get the maximum sigma value.
+
+
+   .. py:property:: num_elites
+      :type: int
+
+
+      
+      Get the number of elites.
+
+
+   .. py:method:: pre_optimization(old_times: numpy.ndarray, new_times: numpy.ndarray) -> None
+
+      
+      Update sigma if the number of nodes has changed.
+
+
+   .. py:method:: sample_control_knots(nominal_knots: numpy.ndarray) -> numpy.ndarray
+
+      
+      Samples control knots given a nominal control input.
+
+      CEM adds fitted Gaussian noise to the nominal control input.
+
+      :param nominal_knots: The nominal control input to sample from. Shape=(num_nodes, nu).
+
+      :returns: *sampled_knots* -- The sampled control input. Shape=(num_rollouts, num_nodes, nu).
+
+
+   .. py:method:: update_nominal_knots(sampled_knots: numpy.ndarray, rewards: numpy.ndarray) -> numpy.ndarray
+
+      
+      Update the nominal control knots based on the sampled controls and rewards.
+
+      CEM takes the top k sampled control inputs and fits a Gaussian to them.
+
+      :param sampled_knots: The sampled control input. Shape=(num_rollouts, num_nodes, nu).
+      :param rewards: The rewards for each sampled control input. Shape=(num_rollouts,).
+
+      :returns: *nominal_knots* -- The updated nominal control input. Shape=(num_nodes, nu).
+
+
+.. py:class:: CrossEntropyMethodConfig
+
+   Bases: :py:obj:`judo.optimizers.base.OptimizerConfig`
+
+
+   
+   Configuration for cross-entropy method.
+
+   .. py:attribute:: sigma_min
+      :type:  float
+      :value: 0.1
+
+
+
+   .. py:attribute:: sigma_max
+      :type:  float
+      :value: 1.0
+
+
+
+   .. py:attribute:: num_elites
+      :type:  int
+      :value: 2
+
+
+
+.. py:class:: MPPI(config: MPPIConfig, nu: int)
+
+   Bases: :py:obj:`judo.optimizers.base.Optimizer`\ [\ :py:obj:`MPPIConfig`\ ]
+
+
+   
+   The MPPI optimizer.
+
+   .. py:property:: sigma
+      :type: float
+
+
+      
+      Get the sigma value.
+
+
+   .. py:property:: temperature
+      :type: float
+
+
+      
+      Get the temperature value.
+
+
+   .. py:method:: sample_control_knots(nominal_knots: numpy.ndarray) -> numpy.ndarray
+
+      
+      Samples control knots given a nominal control input.
+
+      MPPI adds fixed Gaussian noise to the nominal control input.
+
+      :param nominal_knots: The nominal control input to sample from. Shape=(num_nodes, nu).
+
+      :returns: *sampled_knots* -- The sampled control input. Shape=(num_rollouts, num_nodes, nu).
+
+
+   .. py:method:: update_nominal_knots(sampled_knots: numpy.ndarray, rewards: numpy.ndarray) -> numpy.ndarray
+
+      
+      Update the nominal control knots based on the sampled controls and rewards.
+
+      MPPI uses a weighted average of the sampled controls based on the rewards.
+
+      :param sampled_knots: The sampled control input. Shape=(num_rollouts, num_nodes, nu).
+      :param rewards: The rewards for each sampled control input. Shape=(num_rollouts,).
+
+      :returns: *nominal_knots* -- The updated nominal control input. Shape=(num_nodes, nu).
+
+
+.. py:class:: MPPIConfig
+
+   Bases: :py:obj:`judo.optimizers.base.OptimizerConfig`
+
+
+   
+   Configuration for predictive sampling.
+
+   .. py:attribute:: sigma
+      :type:  float
+      :value: 0.1
+
+
+
+   .. py:attribute:: temperature
+      :type:  float
+      :value: 0.05
+
+
+
+.. py:class:: PredictiveSampling(config: PredictiveSamplingConfig, nu: int)
+
+   Bases: :py:obj:`judo.optimizers.base.Optimizer`\ [\ :py:obj:`PredictiveSamplingConfig`\ ]
+
+
+   
+   Predictive sampling planner.
+
+   .. py:property:: sigma
+      :type: float
+
+
+      
+      Get the sigma value.
+
+
+   .. py:method:: sample_control_knots(nominal_knots: numpy.ndarray) -> numpy.ndarray
+
+      
+      Samples control knots given a nominal control input.
+
+      Predictive sampling adds fixed Gaussian noise to the nominal control input.
+
+      :param nominal_knots: The nominal control input to sample from. Shape=(num_nodes, nu).
+
+      :returns: *sampled_knots* -- The sampled control input. Shape=(num_rollouts, num_nodes, nu).
+
+
+   .. py:method:: update_nominal_knots(sampled_knots: numpy.ndarray, rewards: numpy.ndarray) -> numpy.ndarray
+
+      
+      Update the nominal control knots based on the sampled controls and rewards.
+
+      Predictive sampling takes the best sampled control input.
+
+      :param sampled_knots: The sampled control input. Shape=(num_rollouts, num_nodes, nu).
+      :param rewards: The rewards for each sampled control input. Shape=(num_rollouts,).
+
+      :returns: *nominal_knots* -- The updated nominal control input. Shape=(num_nodes, nu).
+
+
+.. py:class:: PredictiveSamplingConfig
+
+   Bases: :py:obj:`judo.optimizers.base.OptimizerConfig`
+
+
+   
+   Configuration for predictive sampling.
+
+   .. py:attribute:: sigma
+      :type:  float
+      :value: 0.05
+
+
+
+.. py:function:: get_registered_optimizers() -> dict[str, tuple[Type[base.Optimizer], Type[base.OptimizerConfig]]]
+
+   
+   Get the registered optimizer.
+
+.. py:function:: register_optimizer(name: str, controller_type: Type[base.Optimizer], controller_config_type: Type[base.OptimizerConfig]) -> None
+
+   
+   Register a new optimizer.
+

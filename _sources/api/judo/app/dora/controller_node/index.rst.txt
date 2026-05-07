@@ -1,0 +1,91 @@
+judo.app.dora.controller_node
+=============================
+
+.. py:module:: judo.app.dora.controller_node
+
+
+
+
+Module Contents
+---------------
+
+.. py:class:: ControllerNode(init_task: str = 'cylinder_push', init_optimizer: str = 'cem', node_id: str = 'controller', max_workers: int | None = None, task_registration_cfg: omegaconf.DictConfig | None = None, optimizer_registration_cfg: omegaconf.DictConfig | None = None, make_controller_fn: Callable | None = None)
+
+   Bases: :py:obj:`dora_utils.node.DoraNode`
+
+
+   
+   Controller node.
+
+   .. py:attribute:: controller
+
+
+   .. py:attribute:: lock
+
+
+   .. py:method:: update_task(event: dict) -> None
+
+      
+      Updates the task type.
+
+
+   .. py:method:: reset_task(event: dict) -> None
+
+      
+      Resets the task.
+
+
+   .. py:method:: set_paused_status(event: dict) -> None
+
+      
+      Event handler for processing pause status updates.
+
+
+   .. py:method:: update_optimizer(event: dict) -> None
+
+      
+      Updates the optimizer type.
+
+
+   .. py:method:: update_controller_config(event: dict) -> None
+
+      
+      Callback to update controller config on receiving a new config message.
+
+
+   .. py:method:: update_optimizer_config(event: dict) -> None
+
+      
+      Callback to update optimizer config on receiving a new config message.
+
+
+   .. py:method:: update_task_config(event: dict) -> None
+
+      
+      Callback to update optimizer task config on receiving a new config message.
+
+
+   .. py:method:: write_controls() -> None
+
+      
+      Util that publishes the current controller spline.
+
+
+   .. py:method:: update_states(event: dict) -> None
+
+      
+      Callback to update states on receiving a new state measurement.
+
+
+   .. py:method:: step() -> None
+
+      
+      Updates the controls state internally.
+
+
+   .. py:method:: spin() -> None
+
+      
+      Spin logic for the controller node.
+
+

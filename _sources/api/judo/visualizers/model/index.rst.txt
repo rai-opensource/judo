@@ -1,0 +1,180 @@
+judo.visualizers.model
+======================
+
+.. py:module:: judo.visualizers.model
+
+
+
+
+
+
+
+
+Module Contents
+---------------
+
+.. py:data:: DEFAULT_GRID_SECTION_COLOR
+   :value: (0.02, 0.14, 0.44)
+
+
+.. py:data:: DEFAULT_GRID_CELL_COLOR
+   :value: (0.27, 0.55, 1)
+
+
+.. py:data:: DEFAULT_SPHERE_SUBDIVISIONS
+   :value: 3
+
+
+.. py:data:: DEFAULT_SPLINE_COLOR
+   :value: (0.8, 0.1, 0.8)
+
+
+.. py:data:: DEFAULT_BEST_SPLINE_COLOR
+   :value: (0.96, 0.7, 0.0)
+
+
+.. py:class:: ViserMjModel(target: viser.ViserServer | viser.ClientHandle, spec: mujoco.MjSpec, show_ground_plane: bool = True, geom_exclude_substring: str = '')
+
+   
+   Helper for rendering MJCF models in viser.
+
+   :param target: ViserServer or ClientHandle to add MjModel to.
+   :param spec: MjSpec of the model to be visualized.
+   :param show_ground_plane: optional flag to show the default ground plane.
+   :param geom_exclude_substring: optional string to exclude a geom from visualization.
+
+   .. py:attribute:: all_traces_rollout_size
+      :value: 0
+
+
+
+   .. py:method:: add_geom(geom_name: str, geom: Any) -> None
+
+      
+      Helper function for adding geoms to scene tree.
+
+
+   .. py:method:: add_traces(num_traces: int = 0, all_traces_rollout_size: int = 0, trace_name: str = 'trace') -> None
+
+      
+      Add a collection of all traces to the visualizer, done in one go to avoid having too many things.
+
+      We have two sets of traces to care about: the "elite" reward traces and the regular ones. Due to how the line
+      segments work, we only need one handle per type.
+
+
+   .. py:method:: remove_traces() -> None
+
+      
+      Remove traces.
+
+
+   .. py:method:: set_data(data: mujoco.MjData) -> None
+
+      
+      Write updated configuration from mujoco data to viser viewer.
+
+
+   .. py:method:: set_traces(traces: numpy.ndarray | None, all_traces_rollout_size: int) -> None
+
+      
+      Write updated traces to viser viewer.
+
+      :param traces: trace sensors readings of size (self.num_elite * all_traces_rollout_size, 2, 3).
+      :param all_traces_rollout_size: num_trace_sensors * single_rollout, size of all grouped trace sensor rollouts.
+
+
+   .. py:method:: remove() -> None
+
+      
+      Wrapper function to remove all geometries from Viser.
+
+
+.. py:function:: add_plane(target: viser.ViserServer | viser.ClientHandle, name: str, pos: Tuple[float, float, float] | numpy.ndarray = (0.0, 0.0, 0.0), quat: Tuple[float, float, float, float] | numpy.ndarray = (1.0, 0.0, 0.0, 0.0)) -> viser.SceneNodeHandle
+
+   
+   Add a plane geometry to the visualizer with optional position, quaternion, material, and name.
+
+.. py:function:: add_sphere(target: viser.ViserServer | viser.ClientHandle, name: str, radius: float, pos: numpy.ndarray, quat: numpy.ndarray, rgba: numpy.ndarray) -> viser.SceneNodeHandle
+
+   
+   Add a sphere geometry to the visualizer with optional position, quaternion, material, and name.
+
+.. py:function:: add_cylinder(target: viser.ViserServer | viser.ClientHandle, name: str, radius: float, height: float, pos: numpy.ndarray, quat: numpy.ndarray, rgba: numpy.ndarray) -> viser.SceneNodeHandle
+
+   
+   Add a cylinder geometry to the visualizer with optional position, quaternion, material, and name.
+
+   The cylinder is aligned with the z-axis
+
+.. py:function:: add_box(target: viser.ViserServer | viser.ClientHandle, name: str, size: numpy.ndarray, pos: numpy.ndarray, quat: numpy.ndarray, rgba: numpy.ndarray) -> viser.SceneNodeHandle
+
+   
+   Add a box geometry to the visualizer with optional position, quaternion, material, and name.
+
+.. py:function:: add_capsule(target: viser.ViserServer | viser.ClientHandle, name: str, radius: float, length: float, pos: numpy.ndarray, quat: numpy.ndarray, rgba: numpy.ndarray) -> viser.SceneNodeHandle
+
+   
+   Add a capsule geometry to the visualizer with optional position, quaternion, material, and name.
+
+   The capsule is aligned with the z-axis
+
+.. py:function:: add_ellipsoid(target: viser.ViserServer | viser.ClientHandle, name: str, scaling: numpy.ndarray, pos: numpy.ndarray, quat: numpy.ndarray, rgba: numpy.ndarray) -> viser.SceneNodeHandle
+
+   
+   Add an ellipsoid geometry to the visualizer.
+
+.. py:function:: add_mesh(target: viser.ViserServer | viser.ClientHandle, name: str, vertices: numpy.ndarray, faces: numpy.ndarray, pos: numpy.ndarray, quat: numpy.ndarray, rgba: numpy.ndarray) -> viser.SceneNodeHandle
+
+   
+   Add a triangular mesh geometry to the visualizer.
+
+   Add a triangular mesh geometry to the visualizer with specified vertices and faces,
+   with optional position, quaternion, material, and name.
+
+   Vertices: float (N, 3) and faces: int (M, 3).
+
+.. py:function:: add_mesh_from_file(target: viser.ViserServer | viser.ClientHandle, name: str, mesh_file: pathlib.Path, pos: numpy.ndarray, quat: numpy.ndarray, mesh_scale: numpy.ndarray | None = None, mjs_material: mujoco.MjsMaterial | None = None, spec: mujoco.MjSpec | None = None) -> viser.SceneNodeHandle
+
+   
+   Add a triangle mesh from file, via trimesh.
+
+.. py:function:: add_spline(target: viser.ViserServer | viser.ClientHandle, name: str, positions: tuple[tuple[float, float, float], Ellipsis] | numpy.ndarray, pos: Tuple[float, float, float] | numpy.ndarray = (0.0, 0.0, 0.0), quat: Tuple[float, float, float, float] | numpy.ndarray = (1.0, 0.0, 0.0, 0.0), rgb: Tuple[float, float, float] = DEFAULT_SPLINE_COLOR, line_width: float = 4.0, segments: int | None = None, visible: bool = True) -> viser.SplineCatmullRomHandle
+
+   
+   Add a spline to the visualizer with optional position, quaternion.
+
+.. py:function:: add_segments(target: viser.ViserServer | viser.ClientHandle, name: str, points: numpy.ndarray, pos: Tuple[float, float, float] | numpy.ndarray = (0.0, 0.0, 0.0), quat: Tuple[float, float, float, float] | numpy.ndarray = (1.0, 0.0, 0.0, 0.0), rgb: Tuple[float, float, float] = DEFAULT_SPLINE_COLOR, line_width: float = 4.0, visible: bool = True) -> viser.LineSegmentsHandle
+
+   
+   Add line segments to the visualizer with an optional position and orientation.
+
+   TODO(@bhung) Potentially add support for different kinds of segments
+
+   :param target: ViserServer or handle to attach the segments to
+   :param name: name of the segments
+   :param points: size (N x 2 x 3) where index 0 is point, 1 is start vs end, and 2 is 3D coord
+   :param pos: position that the points are defined with respect to. Defaults to origin
+   :param quat: orientation that the points are defined with respect to. Defaults to identity
+   :param rgb: colors of the points. Can be sized (N x 2 x 3) or a broadcastable shape
+   :param line_width: width of the line, in pixels
+   :param visible: whether or not the lines are initially visible
+
+.. py:function:: set_mesh_color(mesh: trimesh.Trimesh, rgba: numpy.ndarray) -> None
+
+   
+   Set the color of a trimesh mesh.
+
+.. py:function:: set_spline_points(handle: viser.SplineCatmullRomHandle, points: tuple[tuple[float, float, float], Ellipsis] | numpy.ndarray) -> None
+
+   
+   Set the spline waypoints.
+
+.. py:function:: set_segment_points(handle: viser.LineSegmentsHandle, points: numpy.ndarray) -> None
+
+   
+   Set the line waypoints.
+
+   :param handle: handle for the line segments
+   :param points: start and end points of the line segments (N x 2 x 3)
+

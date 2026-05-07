@@ -1,0 +1,285 @@
+judo.tasks.fr3_pick
+===================
+
+.. py:module:: judo.tasks.fr3_pick
+
+
+
+
+
+
+Module Contents
+---------------
+
+.. py:data:: XML_PATH
+   :value: ''
+
+
+.. py:data:: QPOS_HOME
+
+.. py:class:: Phase(*args, **kwds)
+
+   Bases: :py:obj:`enum.Enum`
+
+
+   
+   Defines the phases of the FR3 pick task.
+
+   .. py:attribute:: LIFT
+      :value: 0
+
+
+
+   .. py:attribute:: MOVE
+      :value: 1
+
+
+
+   .. py:attribute:: PLACE
+      :value: 2
+
+
+
+   .. py:attribute:: HOMING
+      :value: 3
+
+
+
+.. py:class:: LiftConfig
+
+   
+   Reward configuration for the lift phase of the FR3 pick task.
+
+   .. py:attribute:: w_lift_close
+      :type:  float
+      :value: 1.0
+
+
+
+   .. py:attribute:: w_lift_height
+      :type:  float
+      :value: 10.0
+
+
+
+.. py:class:: MoveConfig
+
+   
+   Reward configuration for the move phase of the FR3 pick task.
+
+   .. py:attribute:: w_move_goal
+      :type:  float
+      :value: 1.0
+
+
+
+   .. py:attribute:: w_move_close
+      :type:  float
+      :value: 10.0
+
+
+
+.. py:class:: PlaceConfig
+
+   
+   Reward configuration for the place phase of the FR3 pick task.
+
+   .. py:attribute:: w_place_table
+      :type:  float
+      :value: 1.0
+
+
+
+   .. py:attribute:: w_place_goal
+      :type:  float
+      :value: 1.0
+
+
+
+.. py:class:: GlobalConfig
+
+   
+   Global reward configuration for the FR3 pick task.
+
+   .. py:attribute:: w_upright
+      :type:  float
+      :value: 0.25
+
+
+
+   .. py:attribute:: w_coll
+      :type:  float
+      :value: 0.1
+
+
+
+   .. py:attribute:: w_qvel
+      :type:  float
+      :value: 0.005
+
+
+
+   .. py:attribute:: w_open
+      :type:  float
+      :value: 2.0
+
+
+
+.. py:class:: FR3PickConfig
+
+   Bases: :py:obj:`judo.tasks.base.TaskConfig`
+
+
+   
+   Reward configuration for FR3 pick task.
+
+   .. py:attribute:: lift_weights
+      :type:  LiftConfig
+
+
+   .. py:attribute:: move_weights
+      :type:  MoveConfig
+
+
+   .. py:attribute:: place_weights
+      :type:  PlaceConfig
+
+
+   .. py:attribute:: global_weights
+      :type:  GlobalConfig
+
+
+   .. py:attribute:: goal_pos
+      :type:  numpy.ndarray
+
+
+   .. py:attribute:: goal_radius
+      :type:  float
+      :value: 0.05
+
+
+
+   .. py:attribute:: pick_height
+      :type:  float
+      :value: 0.3
+
+
+
+.. py:class:: FR3Pick(model_path: str = XML_PATH, sim_model_path: str | None = None)
+
+   Bases: :py:obj:`judo.tasks.base.Task`\ [\ :py:obj:`FR3PickConfig`\ ]
+
+
+   
+   Defines the FR3 pick task.
+
+   .. py:attribute:: name
+      :type:  str
+      :value: 'fr3_pick'
+
+
+
+   .. py:attribute:: config_t
+      :type:  type[FR3PickConfig]
+
+
+   .. py:attribute:: reset_command
+
+
+   .. py:attribute:: obj_pos_adr
+
+
+   .. py:attribute:: obj_pos_slice
+
+
+   .. py:attribute:: obj_vel_slice
+
+
+   .. py:attribute:: obj_angvel_slice
+
+
+   .. py:attribute:: arm_pos_slice
+
+
+   .. py:attribute:: left_finger_obj_adr
+
+
+   .. py:attribute:: right_finger_obj_adr
+
+
+   .. py:attribute:: left_finger_table_adr
+
+
+   .. py:attribute:: right_finger_table_adr
+
+
+   .. py:attribute:: grasp_site_adr
+
+
+   .. py:attribute:: obj_table_adr
+
+
+   .. py:attribute:: ee_z_adr
+
+
+   .. py:attribute:: ee_z_slice
+
+
+   .. py:attribute:: phase
+
+
+   .. py:method:: in_goal_xy(curr_state: numpy.ndarray) -> numpy.ndarray
+
+      
+      Checks if the object is somewhere in the tube above the goal position of radius r.
+
+      :param curr_state: The current state value. Shape=(nq + nv,).
+      :param config: The task configuration.
+
+      :returns: *in_goal* -- A bool indicating whether the object is in the goal region. Shape=(,).
+
+
+   .. py:method:: check_sensor_dists(sensors: numpy.ndarray, pair: Literal['left_finger_obj', 'right_finger_obj', 'left_finger_table', 'right_finger_table', 'obj_table']) -> numpy.ndarray
+
+      
+      Computes the distance between a specified pair of bodies.
+
+      :param sensors: The sensor values. Shape=(num_rollouts, T, total_sensor_dim).
+      :param pair: The pair of bodies to check contact for. One of "left_finger_obj", "right_finger_obj", or "obj_table".
+
+      :returns: *dist* -- An array indicating the distance between the specified pair. Shape=(num_rollouts, T).
+
+
+   .. py:method:: pre_rollout(curr_state: numpy.ndarray) -> None
+
+      
+      Computes the current phase of the system.
+
+
+   .. py:method:: reward(states: numpy.ndarray, sensors: numpy.ndarray, controls: numpy.ndarray, system_metadata: dict[str, Any] | None = None) -> numpy.ndarray
+
+      
+      Implements the LEAP cube rotation tracking task reward.
+
+      The reward function switches between 4 modes:
+
+
+      * LIFT: The object is lifted from the table.
+      * MOVE: The object is moved to the goal position.
+      * PLACE: The object is placed on the table.
+      * HOMING: The robot arm is returned to the home position.
+
+      There are also global rewards that are always applied:
+
+
+      * Upright: The end-effector is upright.
+      * Collision: The robot hand is not touching the table.
+      * Qvel: The robot arm is not moving too fast.
+
+
+   .. py:method:: reset() -> None
+
+      
+      Resets the model to a default state with random goal.
+
+

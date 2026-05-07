@@ -1,0 +1,67 @@
+judo.tasks.leap_cube_down
+=========================
+
+.. py:module:: judo.tasks.leap_cube_down
+
+
+
+
+
+
+Module Contents
+---------------
+
+.. py:data:: XML_PATH
+   :value: ''
+
+
+.. py:data:: SIM_XML_PATH
+   :value: ''
+
+
+.. py:data:: QPOS_HOME
+
+.. py:class:: LeapCubeDownConfig
+
+   Bases: :py:obj:`judo.tasks.leap_cube.LeapCubeConfig`
+
+
+   
+   Reward configuration LEAP cube rotation task.
+
+   .. py:attribute:: w_rot
+      :type:  float
+      :value: 0.05
+
+
+
+.. py:class:: LeapCubeDown(model_path: str = XML_PATH, sim_model_path: str = SIM_XML_PATH)
+
+   Bases: :py:obj:`judo.tasks.leap_cube.LeapCube`
+
+
+   
+   Defines the LEAP cube with palm down rotation task.
+
+   .. py:attribute:: name
+      :type:  str
+      :value: 'leap_cube_down'
+
+
+
+   .. py:attribute:: config_t
+      :type:  type[LeapCubeDownConfig]
+
+
+   .. py:attribute:: goal_pos
+
+
+   .. py:attribute:: goal_quat
+
+
+   .. py:attribute:: qpos_home
+
+
+   .. py:attribute:: reset_command
+
+

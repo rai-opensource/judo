@@ -1,0 +1,33 @@
+judo.examples.example_optimizer
+===============================
+
+.. py:module:: judo.examples.example_optimizer
+
+
+
+
+Module Contents
+---------------
+
+.. py:class:: MyCrossEntropyMethodConfig
+
+   Bases: :py:obj:`judo.optimizers.CrossEntropyMethodConfig`
+
+
+   
+   Dummy optimizer config.
+
+   .. py:attribute:: my_custom_param
+      :type:  int
+      :value: 42
+
+
+
+.. py:class:: MyCrossEntropyMethod(config: CrossEntropyMethodConfig, nu: int)
+
+   Bases: :py:obj:`judo.optimizers.CrossEntropyMethod`
+
+
+   
+   Dummy custom optimizer.
+

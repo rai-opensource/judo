@@ -1,0 +1,261 @@
+judo.tasks.spot.spot_base
+=========================
+
+.. py:module:: judo.tasks.spot.spot_base
+
+.. autoapi-nested-parse::
+
+   
+   Base task class for Spot locomotion and manipulation.
+
+   This module mirrors the structure of starfish/dexterity/tasks/spot_base.py
+   but adapted for judo's standalone simulation framework.
+
+
+
+
+
+
+Module Contents
+---------------
+
+.. py:data:: XML_PATH
+   :value: ''
+
+
+.. py:class:: SpotBaseConfig
+
+   Bases: :py:obj:`judo.tasks.base.TaskConfig`
+
+
+   
+   Base configuration for Spot tasks.
+
+   Values match starfish/dexterity/tasks/spot_base.py.
+
+   .. py:attribute:: fall_penalty
+      :type:  float
+      :value: 2500.0
+
+
+
+   .. py:attribute:: spot_fallen_threshold
+      :type:  float
+      :value: 0.35
+
+
+
+   .. py:attribute:: w_goal
+      :type:  float
+      :value: 60.0
+
+
+
+   .. py:attribute:: w_controls
+      :type:  float
+      :value: 0.0
+
+
+
+.. py:data:: ConfigT
+
+.. py:class:: SpotBase(model_path: str = XML_PATH, use_arm: bool = True, use_gripper: bool = False, use_legs: bool = False, use_torso: bool = False, config: SpotBaseConfig | None = None)
+
+   Bases: :py:obj:`judo.tasks.base.Task`\ [\ :py:obj:`ConfigT`\ ], :py:obj:`Generic`\ [\ :py:obj:`ConfigT`\ ]
+
+
+   
+   Flexible base task for Spot locomotion/skills.
+
+   This class mirrors starfish/dexterity/tasks/spot_base.py but adapted
+   for judo's standalone simulation framework.
+
+   Controls are a compact vector mapped to the 25-dim policy command:
+
+
+   * Base only:                        [base_vel(3)]
+   * Base + Arm:                       [base_vel(3), arm_cmd(7)]
+   * Base + Legs:                      [base_vel(3), front_leg_cmd(6), leg_selection(1)]
+   * Base + Arm + Legs:                [base_vel(3), arm_cmd(7), front_leg_cmd(6), leg_selection(1)]
+   * With Torso:                       [..., torso_cmd(3)]  (appended to any of the above)
+
+   The mapping to the 25-dim policy command is done in task_to_sim_ctrl.
+
+   .. py:attribute:: name
+      :type:  str
+      :value: 'spot_base'
+
+
+
+   .. py:attribute:: config_t
+      :type:  type[SpotBaseConfig]
+
+
+   .. py:property:: physics_substeps
+      :type: int
+
+
+      
+      Number of physics steps per control step.
+
+
+   .. py:property:: uses_locomotion_policy
+      :type: bool
+
+
+      
+      Spot tasks always use a locomotion policy backend.
+
+
+   .. py:attribute:: use_arm
+      :value: True
+
+
+
+   .. py:attribute:: use_gripper
+      :value: False
+
+
+
+   .. py:attribute:: use_legs
+      :value: False
+
+
+
+   .. py:attribute:: use_torso
+      :value: False
+
+
+
+   .. py:attribute:: leg_selection_index
+      :type:  int | None
+      :value: None
+
+
+
+   .. py:attribute:: gripper_selection_index
+      :type:  int | None
+      :value: None
+
+
+
+   .. py:attribute:: default_policy_command
+
+
+   .. py:attribute:: body_pose_idx
+
+
+   .. py:property:: nu
+      :type: int
+
+
+      
+      Number of control inputs for this task.
+
+
+   .. py:property:: actuator_ctrlrange
+      :type: numpy.ndarray
+
+
+      
+      Control bounds for the task action space.
+
+
+   .. py:method:: set_command_values() -> None
+
+      
+      Update default_command and command_mask based on enabled features.
+
+
+   .. py:method:: apply_selection_mask(controls: numpy.ndarray) -> numpy.ndarray
+
+      
+      Activate or deactivate leg and gripper commands based on selection values.
+
+      leg selection:
+      -1.0 to -0.5: manipulation with left leg
+      -0.5 to +0.5: no leg manipulation
+      +0.5 to +1.0: manipulation with right leg
+
+      gripper selection:
+      -1.0 to 0.0: gripper closed
+      0.0 to +1.0: gripper open
+
+      :param controls: Control array with selection indices.
+
+      :returns: Controls with selection indices removed and masks applied.
+
+
+   .. py:method:: task_to_sim_ctrl(controls: numpy.ndarray) -> numpy.ndarray
+
+      
+      Map compact controls to 25-dim policy command for C++ rollout.
+
+      Layout of 25-dim policy command:
+      [0:3]   torso_vel_cmd (base velocity)
+      [3:10]  arm_cmd (7 arm joints)
+      [10:22] leg_cmd (4 legs x 3, used for override)
+      [22:25] torso_pos_cmd (roll, pitch, height)
+
+      :param controls: Compact control array of shape (..., nu).
+
+      :returns: Policy command array of shape (..., 25).
+
+
+   .. py:method:: reward(states: numpy.ndarray, sensors: numpy.ndarray, controls: numpy.ndarray, system_metadata: dict[str, Any] | None = None) -> numpy.ndarray
+
+      
+      Base reward function (returns zeros).
+
+      Override in subclasses for task-specific rewards.
+
+      :param states: Rolled out states, shape (num_rollouts, T, nq+nv).
+      :param sensors: Sensor readings, shape (num_rollouts, T, nsensor).
+      :param controls: Control inputs, shape (num_rollouts, T, nu).
+      :param system_metadata: Optional metadata from the system.
+
+      :returns: Rewards for each rollout, shape (num_rollouts,).
+
+
+   .. py:property:: reset_arm_pos
+      :type: numpy.ndarray
+
+
+      
+      Reset position of the arm based on use_arm setting.
+
+
+   .. py:property:: reset_pose
+      :type: numpy.ndarray
+
+
+      
+      Default reset pose for the robot (using RL training defaults).
+
+
+   .. py:method:: optimizer_warm_start() -> numpy.ndarray
+
+      
+      Warm start from default command (arm unstowed, legs standing).
+
+
+   .. py:method:: success(model: mujoco.MjModel, data: mujoco.MjData, metadata: dict[str, Any] | None = None) -> bool
+
+      
+      Check that Spot is still standing. Subclasses should AND with super().success().
+
+
+   .. py:method:: reset() -> None
+
+      
+      Reset the simulation to the default pose.
+
+
+   .. py:method:: get_action_components() -> list[str]
+
+      
+      Get names of each component in the action command vector.
+
+      Matches judo/tasks/spot/spot_base.py.
+
+

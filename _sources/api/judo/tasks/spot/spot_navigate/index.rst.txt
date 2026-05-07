@@ -1,0 +1,99 @@
+judo.tasks.spot.spot_navigate
+=============================
+
+.. py:module:: judo.tasks.spot.spot_navigate
+
+.. autoapi-nested-parse::
+
+   
+   SpotNavigate task - navigate Spot to a goal location.
+
+   Adapted from starfish/dexterity/tasks/spot_navigate.py.
+
+
+
+
+Module Contents
+---------------
+
+.. py:class:: SpotNavigateConfig
+
+   Bases: :py:obj:`judo.tasks.spot.spot_base.SpotBaseConfig`
+
+
+   
+   Configuration for the SpotNavigate task.
+
+   .. py:attribute:: w_goal
+      :type:  float
+      :value: 60.0
+
+
+
+   .. py:attribute:: fall_penalty
+      :type:  float
+      :value: 2500.0
+
+
+
+   .. py:attribute:: w_controls
+      :type:  float
+      :value: 0.0
+
+
+
+   .. py:attribute:: goal_distance_threshold
+      :type:  float
+      :value: 0.5
+
+
+
+   .. py:attribute:: goal_pos
+      :type:  numpy.ndarray
+
+
+.. py:class:: SpotNavigate(model_path: str = XML_PATH, config: SpotNavigateConfig | None = None)
+
+   Bases: :py:obj:`judo.tasks.spot.spot_base.SpotBase`\ [\ :py:obj:`SpotNavigateConfig`\ ]
+
+
+   
+   Task getting Spot to navigate to a desired goal location.
+
+   .. py:attribute:: name
+      :type:  str
+      :value: 'spot_navigate'
+
+
+
+   .. py:attribute:: config_t
+      :type:  type[SpotNavigateConfig]
+
+
+   .. py:attribute:: config
+      :type:  SpotNavigateConfig
+
+
+   .. py:attribute:: body_pose_idx
+
+
+   .. py:method:: reward(states: numpy.ndarray, sensors: numpy.ndarray, controls: numpy.ndarray, system_metadata: dict[str, Any] | None = None) -> numpy.ndarray
+
+      
+      Reward function for the navigate task.
+
+
+   .. py:method:: success(model: mujoco.MjModel, data: mujoco.MjData, metadata: dict[str, Any] | None = None) -> bool
+
+      
+      Check if Spot reached the goal and is still standing.
+
+
+   .. py:property:: reset_pose
+      :type: numpy.ndarray
+
+
+      
+      Reset pose for the navigate task with random initial xy position.
+
+

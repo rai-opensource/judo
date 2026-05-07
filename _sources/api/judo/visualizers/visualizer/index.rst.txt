@@ -1,0 +1,99 @@
+judo.visualizers.visualizer
+===========================
+
+.. py:module:: judo.visualizers.visualizer
+
+
+
+
+
+
+Module Contents
+---------------
+
+.. py:data:: ElementType
+
+.. py:class:: Visualizer(init_task: str = 'cylinder_push', init_optimizer: str = 'cem', task_registration_cfg: omegaconf.DictConfig | None = None, optimizer_registration_cfg: omegaconf.DictConfig | None = None, controller_override_cfg: omegaconf.DictConfig | None = None, optimizer_override_cfg: omegaconf.DictConfig | None = None, sim_pause_button: bool = True, geom_exclude_substring: str = 'collision', available_tasks: dict[str, judo.tasks.TaskRegistration] | None = None)
+
+   
+   Visualizer for a visualization node to reference.
+
+   This class is a small container which includes the data required for a visualization node to run. This includes all
+   of the locks and events required to run. Middleware nodes should keep data within this class and implement methods
+   to send, process, and receive data from here.
+
+   .. py:attribute:: server
+
+
+   .. py:attribute:: available_tasks
+
+
+   .. py:attribute:: available_optimizers
+
+
+   .. py:attribute:: geom_exclude_substring
+      :value: 'collision'
+
+
+
+   .. py:attribute:: task_name
+      :value: ''
+
+
+
+   .. py:attribute:: optimizer_name
+      :value: ''
+
+
+
+   .. py:attribute:: task_lock
+
+
+   .. py:attribute:: task_updated
+
+
+   .. py:attribute:: sim_pause_button
+      :value: True
+
+
+
+   .. py:method:: register_controller_config_overrides(controller_override_cfg: omegaconf.DictConfig) -> None
+
+      
+      Register task-specific controller config overrides.
+
+      We do this in the Visualization node because this is the "master" node in the dora stack.
+
+
+   .. py:method:: register_optimizer_config_overrides(optimizer_override_cfg: omegaconf.DictConfig) -> None
+
+      
+      Register task-specific optimizer config overrides.
+
+      We do this in the Visualization node because this is the "master" node in the dora stack.
+
+
+   .. py:method:: set_task(task_name: str, optimizer_name: str) -> None
+
+      
+      Helper to initialize task from task name.
+
+
+   .. py:method:: setup_gui() -> None
+
+      
+      Set up the GUI for the visualization node.
+
+
+   .. py:method:: remove_handles(handles: list[ElementType] | ElementType) -> None
+
+      
+      Remove GUI handles from the visualization node.
+
+
+   .. py:method:: cleanup() -> None
+
+      
+      Cleanup the visualization node.
+
+

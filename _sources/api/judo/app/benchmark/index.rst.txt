@@ -1,0 +1,67 @@
+judo.app.benchmark
+==================
+
+.. py:module:: judo.app.benchmark
+
+
+
+
+Module Contents
+---------------
+
+.. py:class:: BenchmarkerNode(node_id: str = 'benchmarker', max_workers: int | None = None, num_samples: int = 100)
+
+   Bases: :py:obj:`dora_utils.node.DoraNode`
+
+
+   
+   A node that performs benchmarking of task/optimizer pairs.
+
+   .. py:attribute:: available_optimizers
+
+
+   .. py:attribute:: available_tasks
+
+
+   .. py:attribute:: opt_keys
+      :value: ['cem', 'mppi', 'ps']
+
+
+
+   .. py:attribute:: task_keys
+
+
+   .. py:attribute:: key_pairs
+
+
+   .. py:attribute:: active_pair
+      :value: None
+
+
+
+   .. py:attribute:: num_samples
+      :value: 100
+
+
+
+   .. py:attribute:: results
+
+
+   .. py:method:: cycle_task_optimizer_pair() -> None
+
+      
+      Cycles through the next task/optimizer pair.
+
+
+   .. py:method:: print_results() -> None
+
+      
+      Prints the results of the benchmarking using separate tables per task, with clean rules.
+
+
+   .. py:method:: on_plan_time(event: dict) -> None
+
+      
+      Handles the plan time event.
+
+

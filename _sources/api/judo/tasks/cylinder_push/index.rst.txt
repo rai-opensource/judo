@@ -1,0 +1,106 @@
+judo.tasks.cylinder_push
+========================
+
+.. py:module:: judo.tasks.cylinder_push
+
+
+
+
+
+
+Module Contents
+---------------
+
+.. py:data:: XML_PATH
+   :value: ''
+
+
+.. py:data:: GOAL_DISTANCE_THRESHOLD
+   :value: 0.3
+
+
+.. py:class:: CylinderPushConfig
+
+   Bases: :py:obj:`judo.tasks.base.TaskConfig`
+
+
+   
+   Reward configuration for the cylinder push task.
+
+   .. py:attribute:: w_pusher_proximity
+      :type:  float
+      :value: 0.5
+
+
+
+   .. py:attribute:: w_pusher_velocity
+      :type:  float
+      :value: 0.0
+
+
+
+   .. py:attribute:: w_cart_position
+      :type:  float
+      :value: 0.1
+
+
+
+   .. py:attribute:: pusher_goal_offset
+      :type:  float
+      :value: 0.25
+
+
+
+   .. py:attribute:: goal_pos
+      :type:  numpy.ndarray
+
+
+.. py:class:: CylinderPush(model_path: str = XML_PATH, sim_model_path: str | None = None)
+
+   Bases: :py:obj:`judo.tasks.base.Task`\ [\ :py:obj:`CylinderPushConfig`\ ]
+
+
+   
+   Defines the cylinder push balancing task.
+
+   .. py:attribute:: name
+      :type:  str
+      :value: 'cylinder_push'
+
+
+
+   .. py:attribute:: config_t
+      :type:  type[CylinderPushConfig]
+
+
+   .. py:method:: reward(states: numpy.ndarray, sensors: numpy.ndarray, controls: numpy.ndarray, system_metadata: dict[str, Any] | None = None) -> numpy.ndarray
+
+      
+      Implements the cylinder push reward from MJPC.
+
+      Maps a list of states, list of controls, to a batch of rewards (summed over time) for each rollout.
+
+      The cylinder push reward has four terms:
+
+      ::
+
+         * `pusher_reward`, penalizing the distance between the pusher and the cart.
+         * `velocity_reward` penalizing squared linear velocity of the pusher.
+         * `goal_reward`, penalizing the distance from the cart to the goal.
+
+
+      Since we return rewards, each penalty term is returned as negative. The max reward is zero.
+
+
+   .. py:method:: success(model: mujoco.MjModel, data: mujoco.MjData, metadata: dict[str, Any] | None = None) -> bool
+
+      
+      Check if the cart is close to the goal position.
+
+
+   .. py:method:: reset() -> None
+
+      
+      Resets the model to a default (random) state.
+
+

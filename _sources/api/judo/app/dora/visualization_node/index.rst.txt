@@ -1,0 +1,98 @@
+judo.app.dora.visualization_node
+================================
+
+.. py:module:: judo.app.dora.visualization_node
+
+
+
+
+
+
+Module Contents
+---------------
+
+.. py:data:: ElementType
+
+.. py:class:: VisualizationNode(node_id: str = 'visualization', max_workers: int | None = None, init_task: str = 'cylinder_push', init_optimizer: str = 'cem', task_registration_cfg: omegaconf.DictConfig | None = None, optimizer_registration_cfg: omegaconf.DictConfig | None = None, controller_override_cfg: omegaconf.DictConfig | None = None, optimizer_override_cfg: omegaconf.DictConfig | None = None, sim_pause_button: bool = True, geom_exclude_substring: str = 'collision', available_tasks: dict[str, judo.tasks.TaskRegistration] | None = None)
+
+   Bases: :py:obj:`dora_utils.node.DoraNode`
+
+
+   
+   The visualization node.
+
+   .. py:attribute:: visualizer
+
+
+   .. py:method:: write_sim_pause() -> None
+
+      
+      Write the sim pause signal to the GUI.
+
+
+   .. py:method:: write_task() -> None
+
+      
+      Write the task name to the GUI.
+
+
+   .. py:method:: write_task_reset() -> None
+
+      
+      Write the task reset signal to the GUI.
+
+
+   .. py:method:: write_optimizer() -> None
+
+      
+      Write the optimizer name to the GUI.
+
+
+   .. py:method:: write_controller_config() -> None
+
+      
+      Write the controller config to the GUI.
+
+
+   .. py:method:: write_optimizer_config() -> None
+
+      
+      Write the optimizer config to the GUI.
+
+
+   .. py:method:: write_task_config() -> None
+
+      
+      Write the task config to the GUI.
+
+
+   .. py:method:: update_states(event: dict) -> None
+
+      
+      Callback to update states on receiving a new state measurement.
+
+
+   .. py:method:: update_traces(event: dict) -> None
+
+      
+      Callback to update traces on receiving a new trace measurement.
+
+
+   .. py:method:: update_plan_time(event: dict) -> None
+
+      
+      Callback to update plan time on receiving a new plan time measurement.
+
+
+   .. py:method:: spin() -> None
+
+      
+      Spin logic for the visualization node.
+
+
+   .. py:method:: cleanup() -> None
+
+      
+      Cleanup the visualization node.
+
+

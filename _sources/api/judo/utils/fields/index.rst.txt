@@ -1,0 +1,36 @@
+judo.utils.fields
+=================
+
+.. py:module:: judo.utils.fields
+
+
+
+
+
+
+Module Contents
+---------------
+
+.. py:data:: IntOrFloat
+
+.. py:function:: np_1d_field(array: numpy.ndarray, names: list[str] | None = None, mins: list[IntOrFloat] | IntOrFloat | None = None, maxs: list[IntOrFloat] | IntOrFloat | None = None, steps: list[IntOrFloat] | IntOrFloat | None = None, vis_name: str | None = None, xyz_vis_indices: Sequence[int | None] | None = None, xyz_vis_defaults: Sequence[float] = (0.0, 0.0, 0.0)) -> numpy.ndarray
+
+   
+   Create a dataclass field with a default value of a 1D numpy array.
+
+   For all list arguments, the length of the list must match the length of the array.
+   If the length of the list is 1, the value will be broadcasted to the length of the array.
+
+   :param array: The default value of the field.
+   :param names: The names of the array elements for visualization.
+   :param mins: The minimum value of the field.
+   :param maxs: The maximum value of the field.
+   :param steps: The step size of the field.
+   :param vis_name: The name of the visualization.
+   :param xyz_vis_indices: The indices of the array elements to visualize in 3D.
+   :param xyz_vis_defaults: The default values for the visualization.
+
+   :returns: A dataclass field with the specified default value and metadata.
+
+   :raises ValueError: If the array is not 1D or if the lengths of the list arguments do not match the length of the array.
+

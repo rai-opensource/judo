@@ -1,0 +1,66 @@
+judo.utils.hierarchical_mj_rollout_backend
+==========================================
+
+.. py:module:: judo.utils.hierarchical_mj_rollout_backend
+
+.. autoapi-nested-parse::
+
+   
+   MuJoCo rollout backend with hierarchical low-level policy support.
+
+
+
+
+Module Contents
+---------------
+
+.. py:class:: HierarchicalMJRolloutBackend(model: mujoco.MjModel, num_threads: int, policy_path: str | pathlib.Path, physics_substeps: int = 2)
+
+   Bases: :py:obj:`judo.utils.rollout_backend.RolloutBackend`
+
+
+   
+   Rollout backend with C++ mujoco_extensions and ONNX low-level policy inference.
+
+   For Spot tasks, the command format is a 25-dim vector:
+   [base_vel(3), arm(7), legs(12), torso(3)]
+
+   .. py:attribute:: num_threads
+
+
+   .. py:attribute:: model
+
+
+   .. py:attribute:: physics_substeps
+      :value: 2
+
+
+
+   .. py:method:: rollout(x0: numpy.ndarray, controls: numpy.ndarray, last_policy_output: numpy.ndarray | None = None) -> tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray | None]
+
+      
+      Conduct parallel rollouts with hierarchical policy inference.
+
+      :param x0: Initial state, shape (nq+nv,). Will be tiled to num_threads internally.
+      :param controls: Control inputs, shape (num_threads, num_timesteps, cmd_dim).
+      :param last_policy_output: Previous policy outputs, shape (num_threads, 12).
+                                 Required for this backend.
+
+      :returns: *Tuple of* --     - states: Rolled out states, shape (num_threads, num_timesteps, nq+nv)
+
+      ::
+
+                   - sensors: Sensor readings, shape (num_threads, num_timesteps, nsensor)
+                   - policy_outputs: Final policy outputs, shape (num_threads, 12).
+
+
+   .. py:method:: update(num_threads: int) -> None
+
+      
+      Update the number of threads.
+
+      Recreates C++ systems for new thread count.
+
+      :param num_threads: New number of parallel threads.
+
+

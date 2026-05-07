@@ -1,0 +1,137 @@
+judo.optimizers.base
+====================
+
+.. py:module:: judo.optimizers.base
+
+
+
+
+
+
+Module Contents
+---------------
+
+.. py:class:: OptimizerConfig
+
+   Bases: :py:obj:`judo.config.OverridableConfig`
+
+
+   
+   Base class for all optimizer configurations.
+
+   .. py:attribute:: num_rollouts
+      :type:  int
+      :value: 16
+
+
+
+   .. py:attribute:: num_nodes
+      :type:  int
+      :value: 4
+
+
+
+   .. py:attribute:: use_noise_ramp
+      :type:  bool
+      :value: False
+
+
+
+   .. py:attribute:: noise_ramp
+      :type:  float
+      :value: 2.5
+
+
+
+.. py:data:: OptimizerConfigT
+
+.. py:class:: Optimizer(config: OptimizerConfigT, nu: int, override_task_name: str | None = None)
+
+   Bases: :py:obj:`abc.ABC`, :py:obj:`Generic`\ [\ :py:obj:`OptimizerConfigT`\ ]
+
+
+   
+   Base class for all optimizers.
+
+   .. py:attribute:: config
+
+
+   .. py:attribute:: nu
+
+
+   .. py:property:: num_rollouts
+      :type: int
+
+
+      
+      Get the number of rollouts.
+
+
+   .. py:property:: num_nodes
+      :type: int
+
+
+      
+      Get the number of nodes.
+
+
+   .. py:property:: use_noise_ramp
+      :type: bool
+
+
+      
+      Get the use noise ramp flag.
+
+
+   .. py:property:: noise_ramp
+      :type: float
+
+
+      
+      Get the noise ramp value.
+
+
+   .. py:method:: pre_optimization(old_times: numpy.ndarray, new_times: numpy.ndarray) -> None
+
+      
+      An entrypoint to the optimizer before optimization.
+
+      This is used to update optimizer parameters with new information.
+
+      :param old_times: The old times for spline interpolation right before sampling. Shape=(num_nodes,).
+      :param new_times: The new times for spline interpolation right before sampling. Shape=(num_nodes,).
+
+
+   .. py:method:: stop_cond() -> bool
+
+      
+      Check if the optimization should stop aside from reaching max iters (by default, never).
+
+      :returns: True if the optimization should stop, False otherwise.
+
+
+   .. py:method:: sample_control_knots(nominal_knots: numpy.ndarray) -> numpy.ndarray
+      :abstractmethod:
+
+
+      
+      Samples control knots given a nominal control input.
+
+      :param nominal_knots: The nominal control input to sample from. Shape=(num_nodes, nu).
+
+      :returns: *sampled_knots* -- The sampled control input. Shape=(num_rollouts, num_nodes, nu).
+
+
+   .. py:method:: update_nominal_knots(sampled_knots: numpy.ndarray, rewards: numpy.ndarray) -> numpy.ndarray
+      :abstractmethod:
+
+
+      
+      Update the nominal control knots based on the sampled controls and rewards.
+
+      :param sampled_knots: The sampled control input. Shape=(num_rollouts, num_nodes, nu).
+      :param rewards: The rewards for each sampled control input. Shape=(num_rollouts,).
+
+      :returns: *nominal_knots* -- The updated nominal control input. Shape=(num_nodes, nu).
+
+

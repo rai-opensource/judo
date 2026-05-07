@@ -1,0 +1,191 @@
+judo.utils.timer
+================
+
+.. py:module:: judo.utils.timer
+
+.. autoapi-nested-parse::
+
+   
+   Timer utility for measuring and analyzing code execution time.
+
+
+
+
+Module Contents
+---------------
+
+.. py:class:: Timer(name: str = 'Timer', unit: str = 'ms')
+
+   
+   Timer for measuring code execution time with statistics.
+
+   Uses MATLAB-style tic/toc naming.
+
+   .. rubric:: Example
+
+   ..
+
+      ..
+
+         ..
+
+            timer = Timer("inference")
+            for _ in range(100):
+            ...     timer.tic()
+            ...     model.forward(x)
+            ...     timer.toc()
+            timer.print_stats()
+            [inference:] mean=1.234ms, std=0.123ms, ..., total=123.400ms (n=100)
+
+
+   Or use as context manager:
+   ==========================
+
+   ..
+
+      ..
+
+         ..
+
+            with timer:
+            ...     model.forward(x)
+
+
+   .. py:attribute:: name
+      :value: 'Timer'
+
+
+
+   .. py:attribute:: unit
+      :value: 'ms'
+
+
+
+   .. py:method:: tic() -> None
+
+      
+      Start the timer (MATLAB-style).
+
+
+   .. py:method:: toc() -> float
+
+      
+      Stop the timer and record the elapsed time (MATLAB-style).
+
+      :returns: The elapsed time in seconds.
+
+      :raises RuntimeError: If the timer was not started.
+
+
+   .. py:attribute:: start
+
+
+   .. py:attribute:: stop
+
+
+   .. py:method:: __enter__() -> Timer
+
+      
+      Context manager entry - starts the timer.
+
+
+   .. py:method:: __exit__(*args: object) -> None
+
+      
+      Context manager exit - stops the timer.
+
+
+   .. py:method:: reset() -> None
+
+      
+      Reset all recorded times.
+
+
+   .. py:property:: times
+      :type: list[float]
+
+
+      
+      Get all recorded times in seconds.
+
+
+   .. py:property:: count
+      :type: int
+
+
+      
+      Get the number of recorded times.
+
+
+   .. py:property:: mean
+      :type: float
+
+
+      
+      Get the mean time in seconds.
+
+
+   .. py:property:: std
+      :type: float
+
+
+      
+      Get the standard deviation of times in seconds.
+
+
+   .. py:property:: median
+      :type: float
+
+
+      
+      Get the median time in seconds.
+
+
+   .. py:property:: min
+      :type: float
+
+
+      
+      Get the minimum time in seconds.
+
+
+   .. py:property:: max
+      :type: float
+
+
+      
+      Get the maximum time in seconds.
+
+
+   .. py:property:: total
+      :type: float
+
+
+      
+      Get the total accumulated time in seconds.
+
+
+   .. py:method:: get_stats() -> dict[str, float]
+
+      
+      Get all statistics as a dictionary.
+
+      :returns: *Dictionary with keys* -- mean, std, median, min, max, total, count.
+                All time values are in seconds.
+
+
+   .. py:method:: print_stats(print_fn: Callable[[str], None] = print) -> None
+
+      
+      Print timing statistics.
+
+      :param print_fn: Function to use for printing (default: print).
+                       Can be logging.info or any callable that takes a string.
+
+
+   .. py:method:: __repr__() -> str
+
+      
+      Return a string representation of the timer.
+
+

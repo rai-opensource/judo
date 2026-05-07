@@ -1,0 +1,61 @@
+judo.app.utils
+==============
+
+.. py:module:: judo.app.utils
+
+
+
+
+Module Contents
+---------------
+
+.. py:function:: get_class_from_string(class_path: str) -> type
+
+   
+   Get a class from a string path.
+
+.. py:function:: register_tasks_from_cfg(task_registration_cfg: omegaconf.DictConfig) -> None
+
+   
+   Register custom tasks.
+
+   :param task_registration_cfg: Mapping keyed by task name. Each value must contain:
+                                 ``task``\ : import path to the Task class
+                                 ``config``\ : import path to the TaskConfig class
+
+   ::
+
+                                Optional keys:
+                                `rollout_backend`: rollout backend registry key for controllers
+                                `simulation_backend`: simulation backend registry key for the simulation node
+                                `locomotion_policy_path`: path to a low-level policy used by hierarchical tasks
+
+                                Example schema:
+                                {
+                                    "cylinder_push": {
+                                        "task": "judo.tasks.cylinder_push.CylinderPush",
+                                        "config": "judo.tasks.cylinder_push.CylinderPushConfig",
+                                        "rollout_backend": "mujoco",
+                                        "simulation_backend": "mujoco",
+                                    }
+                                }
+
+.. py:function:: register_optimizers_from_cfg(optimizer_registration_cfg: omegaconf.DictConfig) -> None
+
+   
+   Register custom optimizers.
+
+   :param optimizer_registration_cfg: Mapping keyed by optimizer name. Each value must contain:
+                                      ``optimizer``\ : import path to the Optimizer class
+                                      ``config``\ : import path to the OptimizerConfig class
+
+   ::
+
+                                     Example schema:
+                                     {
+                                         "cem": {
+                                             "optimizer": "judo.optimizers.cem.CrossEntropyMethod",
+                                             "config": "judo.optimizers.cem.CrossEntropyMethodConfig",
+                                         }
+                                     }
+

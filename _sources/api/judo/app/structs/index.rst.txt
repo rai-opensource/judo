@@ -1,0 +1,141 @@
+judo.app.structs
+================
+
+.. py:module:: judo.app.structs
+
+
+
+
+
+
+Module Contents
+---------------
+
+.. py:class:: EventType(*args, **kwds)
+
+   Bases: :py:obj:`enum.Enum`
+
+
+   
+   Enum for event types.
+
+   .. py:attribute:: START_SIMULATION
+
+
+   .. py:attribute:: PAUSE_SIMULATION
+
+
+   .. py:attribute:: START_CONTROLLER
+
+
+   .. py:attribute:: PAUSE_CONTROLLER
+
+
+   .. py:attribute:: CHANGE_TASK
+
+
+   .. py:attribute:: CHANGE_CONTROLLER
+
+
+.. py:class:: JudoEvent
+
+   
+   Struct for judo events.
+
+   .. py:attribute:: event
+      :type:  EventType
+
+
+   .. py:attribute:: value
+      :type:  str | None
+      :value: None
+
+
+
+.. py:class:: MujocoState
+
+   
+   Struct for writing simulation states between different threads.
+
+   .. py:attribute:: time
+      :type:  float
+
+
+   .. py:attribute:: qpos
+      :type:  numpy.ndarray
+
+
+   .. py:attribute:: qvel
+      :type:  numpy.ndarray
+
+
+   .. py:attribute:: mocap_pos
+      :type:  numpy.ndarray
+
+
+   .. py:attribute:: mocap_quat
+      :type:  numpy.ndarray
+
+
+   .. py:attribute:: sim_metadata
+      :type:  dict[str, Any]
+
+
+.. py:data:: KindType
+
+.. py:class:: SplineData
+
+   
+   Struct for (possibly batched) spline data.
+
+   .. py:attribute:: t
+      :type:  numpy.ndarray
+
+      
+      array of times for knot points, shape (T,)
+
+
+   .. py:attribute:: x
+      :type:  numpy.ndarray
+
+      
+      (possibly batched) array of values to interpolate, shape (..., T, m).
+
+
+   .. py:attribute:: kind
+      :type:  KindType
+      :value: 'zero'
+
+
+      
+      Spline type to use for interpolation. Same as parameter for scipy.interpolate.interp1d.
+
+
+   .. py:attribute:: extrapolate
+      :type:  bool
+      :value: True
+
+
+      
+      Flag for whether to allow extrapolation queries. Default true (for re-initialization).
+
+
+   .. py:method:: spline() -> scipy.interpolate.interp1d
+
+      
+      Helper function for creating spline objects.
+
+
+.. py:class:: RenderPose
+
+   
+   Struct for visualization poses used by the renderer.
+
+   .. py:attribute:: xpos
+      :type:  numpy.ndarray
+
+
+   .. py:attribute:: xquat
+      :type:  numpy.ndarray
+
+

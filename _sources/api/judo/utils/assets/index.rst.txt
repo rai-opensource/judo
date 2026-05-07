@@ -1,0 +1,28 @@
+judo.utils.assets
+=================
+
+.. py:module:: judo.utils.assets
+
+
+
+
+Module Contents
+---------------
+
+.. py:function:: acquire_lock(lock_path: pathlib.Path, timeout: int = 60, poll_interval: float = 0.1) -> None
+
+   
+   Acquire a lock by creating a lock file atomically.
+
+   Raises TimeoutError if the lock can't be acquired in ``timeout`` seconds.
+
+.. py:function:: release_lock(lock_path: pathlib.Path) -> None
+
+   
+   Remove the lock file to release the lock.
+
+.. py:function:: download_and_extract_meshes(extract_root: str, repo: str = 'bdaiinstitute/judo', asset_name: str = 'meshes.zip', tag: str | None = None) -> None
+
+   
+   Downloads meshes.zip from the latest public GitHub release and extracts it.
+

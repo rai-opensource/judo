@@ -1,0 +1,75 @@
+judo.simulation.base
+====================
+
+.. py:module:: judo.simulation.base
+
+
+
+
+Module Contents
+---------------
+
+.. py:class:: Simulation(init_task: str = 'cylinder_push', task_registration_cfg: omegaconf.DictConfig | None = None)
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   
+   Base class for a simulation object.
+
+   This class contains the data required to run a simulation. This includes configurations and task information.
+   It can be inherited from to implement specific simulation backends.
+
+   Middleware nodes should instantiate this class and implement methods to send, process, and receive data.
+
+   .. py:attribute:: paused
+      :value: False
+
+
+
+   .. py:method:: set_task(task_name: str) -> None
+
+      
+      Initialize task from task name.
+
+
+   .. py:method:: step(command: numpy.ndarray) -> None
+      :abstractmethod:
+
+
+      
+      Step the simulation forward by one timestep.
+
+      :param command: Control command for this timestep.
+
+
+   .. py:method:: pause() -> None
+
+      
+      Toggle paused state.
+
+
+   .. py:property:: sim_state
+      :type: judo.app.structs.MujocoState
+
+
+      
+      Returns the current simulation state.
+
+
+   .. py:property:: render_pose
+      :type: judo.app.structs.RenderPose
+
+
+      
+      Returns the current pose data used for visualization.
+
+
+   .. py:property:: timestep
+      :type: float
+
+
+      
+      Timestep the simulation expects to run at.
+
+

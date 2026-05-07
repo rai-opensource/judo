@@ -1,0 +1,66 @@
+judo.simulation.hierarchical_mj_simulation
+==========================================
+
+.. py:module:: judo.simulation.hierarchical_mj_simulation
+
+.. autoapi-nested-parse::
+
+   
+   MuJoCo simulation with hierarchical low-level policy support.
+
+
+
+
+Module Contents
+---------------
+
+.. py:class:: HierarchicalMJSimulation(init_task: str = 'spot_base', task_registration_cfg: omegaconf.DictConfig | None = None)
+
+   Bases: :py:obj:`judo.simulation.mj_simulation.MJSimulation`
+
+
+   
+   MuJoCo simulation with a hierarchical low-level policy layer.
+
+   For tasks with uses_locomotion_policy=True, this routes control through
+   mujoco_extensions threaded_rollout so a lower-level policy can refine the
+   high-level command before physics integration.
+
+   The simulation maintains internal policy state (last_policy_output) to
+   ensure smooth transitions between timesteps.
+
+   .. py:method:: step(command: numpy.ndarray) -> None
+
+      
+      Step the simulation forward.
+
+      Routes to the C++ hierarchical rollout if systems are initialized,
+      otherwise falls back to direct actuator control.
+
+      :param command: Control array in task format (task.nu dimensions).
+                      For hierarchical tasks, this is converted to the low-level
+                      policy command internally.
+
+
+   .. py:method:: reset_policy_state() -> None
+
+      
+      Reset the internal policy state to zeros.
+
+
+   .. py:method:: set_task(task_name: str) -> None
+
+      
+      Set the current task and reinitialize C++ systems if needed.
+
+      :param task_name: Name of the task to set.
+
+
+   .. py:property:: last_policy_output
+      :type: numpy.ndarray
+
+
+      
+      Return the last low-level policy output.
+
+

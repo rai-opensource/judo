@@ -1,0 +1,33 @@
+judo.examples.example_task
+==========================
+
+.. py:module:: judo.examples.example_task
+
+
+
+
+Module Contents
+---------------
+
+.. py:class:: MyCylinderPushConfig
+
+   Bases: :py:obj:`judo.tasks.CylinderPushConfig`
+
+
+   
+   Dummy task config.
+
+   .. py:attribute:: my_custom_param
+      :type:  int
+      :value: 42
+
+
+
+.. py:class:: MyCylinderPush(model_path: str = XML_PATH, sim_model_path: str | None = None)
+
+   Bases: :py:obj:`judo.tasks.CylinderPush`
+
+
+   
+   Dummy custom task.
+

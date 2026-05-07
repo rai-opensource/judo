@@ -1,0 +1,70 @@
+judo.gui
+========
+
+.. py:module:: judo.gui
+
+
+
+
+
+
+
+
+Module Contents
+---------------
+
+.. py:data:: DEFAULT_SLIDER_STEP_FLOAT
+   :value: 0.01
+
+
+.. py:data:: DEFAULT_SLIDER_STEP_INT
+   :value: 1
+
+
+.. py:data:: GOAL_RADIUS
+   :value: 0.15
+
+
+.. py:function:: slider(parameter_name: str, min: int | float, max: int | float, step: float | None = None, bounded: bool = False) -> Callable[[type], type]
+
+   
+   Decorator that adds slider metadata to desired dataclass fields.
+
+   :param parameter_name: target parameter to annotate.
+   :param min: minimum value for slider.
+   :param max: maximum value for slider.
+   :param step: step for slider handle. If not set, defaults to constant 0.01 for floats and 1 for ints.
+   :param bounded: whether or not we lock the slider from exceeding the min and max bounds set by the user.
+
+.. py:class:: GuiBoundedSliderHandle(gui_slider: viser.GuiSliderHandle)
+
+   Bases: :py:obj:`viser.GuiSliderHandle`
+
+
+   
+   A slider handle that is locked to a value.
+
+.. py:function:: create_gui_elements(server: viser.ViserServer, config: Any, config_updated_event: threading.Event, config_lock: threading.Lock) -> List[viser.GuiInputHandle]
+
+   
+   Recursively iterates through a dataclass, adding GUI elements / callbacks for its fields to a Viser server.
+
+   :param server: current ``ViserServer`` to which the GUI elements are added.
+   :param config: dataclass containing params which we want to update via viser.
+   :param config_dict: ``multiprocessing.DictProxy`` where param values are shared between threads.
+   :param config_updated_event: ``multiprocessing.Event`` that flags when config params are updated.
+   :param config_lock: ``multiprocessing.Lock`` that prevents multiple processes from accessing the same param.
+
+   Returns a list of GuiHandles that can be used to remove all elements created here on destruction.
+
+.. py:function:: register_gui_element_callback(element: Any, config_parameter: dataclasses.Field, config: Any, config_updated_event: threading.Event, config_lock: threading.Lock) -> None
+
+   
+   Register a callback for a GUI element.
+
+   :param element: The GUI element to register the callback for.
+   :param config_parameter: The field in the dataclass that corresponds to the GUI element.
+   :param config: The dataclass to write into.
+   :param config_updated_event: The event to set when the config is updated.
+   :param config_lock: The lock to use for thread safety.
+

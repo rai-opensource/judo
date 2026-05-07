@@ -1,0 +1,80 @@
+judo.visualizers.utils
+======================
+
+.. py:module:: judo.visualizers.utils
+
+
+
+
+Module Contents
+---------------
+
+.. py:function:: get_sensor_name(model: mujoco.MjModel, sensorid: int) -> str
+
+   
+   Return name of the sensor with given ID from MjModel.
+
+.. py:function:: get_mesh_data(model: mujoco.MjModel, meshid: int) -> tuple[numpy.ndarray, numpy.ndarray]
+
+   
+   Retrieve the vertices and faces of a specified mesh from a MuJoCo model.
+
+   :param model: MjModel The MuJoCo model containing the mesh data.
+   :param meshid: int The index of the mesh to retrieve.
+
+   Result:
+       tuple[np.ndarray, np.ndarray]
+       Vertices (N, 3) and faces (M, 3) of the mesh.
+
+.. py:function:: get_mesh_file(spec: mujoco.MjSpec, geom: mujoco.MjsGeom) -> pathlib.Path
+
+   
+   Extracts the mesh filepath for a particular geom from an MjSpec.
+
+.. py:function:: get_mesh_scale(spec: mujoco.MjSpec, geom: mujoco.MjsGeom) -> numpy.ndarray
+
+   
+   Extracts the relevant scale parameters for a given geom in the MjSpec.
+
+.. py:function:: has_material(mesh: trimesh.Trimesh) -> bool
+
+   
+   Check if mesh needs MuJoCo material applied (no texture or has placeholder).
+
+.. py:function:: apply_mujoco_material(mesh: trimesh.Trimesh, material: mujoco.MjsMaterial, spec: mujoco.MjSpec | None = None, mesh_file: pathlib.Path | None = None) -> None
+
+   
+   Applies a MuJoCo material to a trimesh mesh.
+
+   Tries to load texture from: 1) MuJoCo spec, 2) MTL file, 3) solid color fallback.
+
+   :param mesh: the trimesh.Trimesh to modify
+   :param material: an object matching the mjsMaterial struct
+   :param spec: optional MjSpec to look up texture files
+   :param mesh_file: optional mesh file path to find MTL texture
+
+.. py:function:: is_trace_sensor(model: mujoco.MjModel, sensorid: int) -> bool
+
+   
+   Check if a sensor is a trace sensor.
+
+.. py:function:: count_trace_sensors(model: mujoco.MjModel) -> int
+
+   
+   Count the number of trace sensors of a given mujoco model.
+
+.. py:function:: get_trace_sensors(model: mujoco.MjModel) -> List[int]
+
+   
+   Get the IDs of all trace sensors in a given mujoco model.
+
+.. py:function:: rgba_float_to_int(rgba_float: numpy.ndarray) -> numpy.ndarray
+
+   
+   Convert RGBA float values in [0, 1] to int values in [0, 255].
+
+.. py:function:: rgba_int_to_float(rgba_int: numpy.ndarray) -> numpy.ndarray
+
+   
+   Convert RGBA int values in [0, 255] to float values in [0, 1].
+

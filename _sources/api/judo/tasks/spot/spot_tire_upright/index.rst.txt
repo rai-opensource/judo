@@ -1,0 +1,154 @@
+judo.tasks.spot.spot_tire_upright
+=================================
+
+.. py:module:: judo.tasks.spot.spot_tire_upright
+
+.. autoapi-nested-parse::
+
+   
+   SpotTireUpright task - get Spot to upright a tire that's lying flat.
+
+   This module mirrors the logic of starfish/dexterity/tasks/spot_tire_upright.py
+   but adapted for judo's standalone simulation framework.
+
+
+
+
+
+
+Module Contents
+---------------
+
+.. py:data:: XML_PATH
+   :value: ''
+
+
+.. py:class:: SpotTireUprightConfig
+
+   Bases: :py:obj:`judo.tasks.spot.spot_base.SpotBaseConfig`
+
+
+   
+   Configuration for the SpotTireUpright task.
+
+   Values match starfish/dexterity/tasks/spot_tire_upright.py.
+
+   .. py:attribute:: orientation_error_smoothing_width
+      :type:  float
+      :value: 1.0
+
+
+
+   .. py:attribute:: w_tire_orientation
+      :type:  float
+      :value: 200.0
+
+
+
+   .. py:attribute:: w_gripper_proximity
+      :type:  float
+      :value: 10.0
+
+
+
+   .. py:attribute:: w_foot_proximity
+      :type:  float
+      :value: 5.0
+
+
+
+   .. py:attribute:: w_torso_proximity
+      :type:  float
+      :value: 5.0
+
+
+
+   .. py:attribute:: gripper_too_inside_tire_penalty
+      :type:  float
+      :value: 150.0
+
+
+
+   .. py:attribute:: gripper_not_above_tire_penalty
+      :type:  float
+      :value: 100.0
+
+
+
+   .. py:attribute:: w_controls
+      :type:  float
+      :value: 2.0
+
+
+
+   .. py:attribute:: fall_penalty
+      :type:  float
+      :value: 10000.0
+
+
+
+.. py:class:: SpotTireUpright(model_path: str = XML_PATH, config: SpotTireUprightConfig | None = None)
+
+   Bases: :py:obj:`judo.tasks.spot.spot_base.SpotBase`\ [\ :py:obj:`SpotTireUprightConfig`\ ]
+
+
+   
+   Task for getting Spot to upright a tire that's lying flat.
+
+   The goal is to manipulate the tire from a lying flat position to an
+   upright position (y-axis horizontal). Spot can use its arm gripper
+   and front legs to accomplish this task.
+
+   This class mirrors starfish/dexterity/tasks/spot_tire_upright.py.
+
+   .. py:attribute:: name
+      :type:  str
+      :value: 'spot_tire_upright'
+
+
+
+   .. py:attribute:: config_t
+      :type:  type[SpotTireUprightConfig]
+
+
+   .. py:attribute:: config
+      :type:  SpotTireUprightConfig
+
+
+   .. py:method:: reward(states: numpy.ndarray, sensors: numpy.ndarray, controls: numpy.ndarray, system_metadata: dict[str, Any] | None = None) -> numpy.ndarray
+
+      
+      Reward function for the tire uprighting task.
+
+      This matches the reward function in starfish/dexterity/tasks/spot_tire_upright.py.
+
+      :param states: Rolled out states, shape (num_rollouts, T, nq+nv).
+      :param sensors: Sensor readings, shape (num_rollouts, T, nsensor).
+      :param controls: Control inputs, shape (num_rollouts, T, nu).
+      :param system_metadata: Optional metadata from the system.
+
+      :returns: Rewards for each rollout, shape (num_rollouts,).
+
+
+   .. py:property:: reset_pose
+      :type: numpy.ndarray
+
+
+      
+      Reset pose of robot and tire - tire starts lying flat.
+
+      :returns: Initial qpos array with random robot and tire positions.
+
+
+   .. py:method:: success(model: mujoco.MjModel, data: mujoco.MjData, metadata: dict[str, Any] | None = None) -> bool
+
+      
+      Check if the tire is upright (y-axis horizontal).
+
+      :param model: MuJoCo model.
+      :param data: MuJoCo data.
+      :param metadata: Optional task metadata.
+
+      :returns: True if the tire is upright.
+
+

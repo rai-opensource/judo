@@ -1,0 +1,103 @@
+judo.optimizers.cem
+===================
+
+.. py:module:: judo.optimizers.cem
+
+
+
+
+Module Contents
+---------------
+
+.. py:class:: CrossEntropyMethodConfig
+
+   Bases: :py:obj:`judo.optimizers.base.OptimizerConfig`
+
+
+   
+   Configuration for cross-entropy method.
+
+   .. py:attribute:: sigma_min
+      :type:  float
+      :value: 0.1
+
+
+
+   .. py:attribute:: sigma_max
+      :type:  float
+      :value: 1.0
+
+
+
+   .. py:attribute:: num_elites
+      :type:  int
+      :value: 2
+
+
+
+.. py:class:: CrossEntropyMethod(config: CrossEntropyMethodConfig, nu: int)
+
+   Bases: :py:obj:`judo.optimizers.base.Optimizer`\ [\ :py:obj:`CrossEntropyMethodConfig`\ ]
+
+
+   
+   The cross-entropy method.
+
+   .. py:attribute:: sigma
+
+
+   .. py:property:: sigma_min
+      :type: float
+
+
+      
+      Get the minimum sigma value.
+
+
+   .. py:property:: sigma_max
+      :type: float
+
+
+      
+      Get the maximum sigma value.
+
+
+   .. py:property:: num_elites
+      :type: int
+
+
+      
+      Get the number of elites.
+
+
+   .. py:method:: pre_optimization(old_times: numpy.ndarray, new_times: numpy.ndarray) -> None
+
+      
+      Update sigma if the number of nodes has changed.
+
+
+   .. py:method:: sample_control_knots(nominal_knots: numpy.ndarray) -> numpy.ndarray
+
+      
+      Samples control knots given a nominal control input.
+
+      CEM adds fitted Gaussian noise to the nominal control input.
+
+      :param nominal_knots: The nominal control input to sample from. Shape=(num_nodes, nu).
+
+      :returns: *sampled_knots* -- The sampled control input. Shape=(num_rollouts, num_nodes, nu).
+
+
+   .. py:method:: update_nominal_knots(sampled_knots: numpy.ndarray, rewards: numpy.ndarray) -> numpy.ndarray
+
+      
+      Update the nominal control knots based on the sampled controls and rewards.
+
+      CEM takes the top k sampled control inputs and fits a Gaussian to them.
+
+      :param sampled_knots: The sampled control input. Shape=(num_rollouts, num_nodes, nu).
+      :param rewards: The rewards for each sampled control input. Shape=(num_rollouts,).
+
+      :returns: *nominal_knots* -- The updated nominal control input. Shape=(num_nodes, nu).
+
+

@@ -1,0 +1,46 @@
+judo.optimizers.overrides
+=========================
+
+.. py:module:: judo.optimizers.overrides
+
+
+
+
+Module Contents
+---------------
+
+.. py:function:: set_default_cylinder_push_overrides() -> None
+
+   
+   Sets the default task-specific controller config overrides for the cylinder push task.
+
+.. py:function:: set_default_cartpole_overrides() -> None
+
+   
+   Sets the default task-specific controller config overrides for the cartpole task.
+
+.. py:function:: set_default_leap_cube_overrides() -> None
+
+   
+   Sets the default task-specific controller config overrides for the leap cube task.
+
+.. py:function:: set_default_leap_cube_down_overrides() -> None
+
+   
+   Sets the default task-specific controller config overrides for the leap cube down task.
+
+.. py:function:: set_default_caltech_leap_cube_overrides() -> None
+
+   
+   Sets the default task-specific controller config overrides for the caltech leap cube task.
+
+.. py:function:: set_default_spot_overrides() -> None
+
+   
+   Sets the default task-specific optimizer config overrides for all Spot tasks.
+
+.. py:function:: set_default_fr3_pick_overrides() -> None
+
+   
+   Sets the default task-specific controller config overrides for the fr3 pick task.
+

@@ -1,0 +1,97 @@
+judo.tasks.leap_cube
+====================
+
+.. py:module:: judo.tasks.leap_cube
+
+
+
+
+
+
+Module Contents
+---------------
+
+.. py:data:: XML_PATH
+   :value: ''
+
+
+.. py:data:: SIM_XML_PATH
+   :value: ''
+
+
+.. py:data:: QPOS_HOME
+
+.. py:class:: LeapCubeConfig
+
+   Bases: :py:obj:`judo.tasks.base.TaskConfig`
+
+
+   
+   Reward configuration LEAP cube rotation task.
+
+   .. py:attribute:: w_pos
+      :type:  float
+      :value: 100.0
+
+
+
+   .. py:attribute:: w_rot
+      :type:  float
+      :value: 0.1
+
+
+
+.. py:class:: LeapCube(model_path: str = XML_PATH, sim_model_path: str | None = SIM_XML_PATH)
+
+   Bases: :py:obj:`judo.tasks.base.Task`\ [\ :py:obj:`LeapCubeConfig`\ ]
+
+
+   
+   Defines the LEAP cube rotation task.
+
+   .. py:attribute:: name
+      :type:  str
+      :value: 'leap_cube'
+
+
+
+   .. py:attribute:: config_t
+      :type:  type[LeapCubeConfig]
+
+
+   .. py:attribute:: goal_pos
+
+
+   .. py:attribute:: goal_quat
+
+
+   .. py:attribute:: qpos_home
+
+
+   .. py:attribute:: reset_command
+
+
+   .. py:method:: reward(states: numpy.ndarray, sensors: numpy.ndarray, controls: numpy.ndarray, system_metadata: dict[str, Any] | None = None) -> numpy.ndarray
+
+      
+      Implements the LEAP cube rotation tracking task reward.
+
+
+   .. py:method:: post_sim_step() -> None
+
+      
+      Checks if the cube has dropped and resets if so.
+
+
+   .. py:method:: reset() -> None
+
+      
+      Resets the model to a default state with random goal.
+
+
+   .. py:method:: get_sim_metadata() -> dict[str, Any]
+
+      
+      Returns the simulation's goal quat.
+
+

@@ -1,0 +1,107 @@
+judo.tasks.cartpole
+===================
+
+.. py:module:: judo.tasks.cartpole
+
+
+
+
+
+
+Module Contents
+---------------
+
+.. py:data:: XML_PATH
+   :value: ''
+
+
+.. py:class:: CartpoleConfig
+
+   Bases: :py:obj:`judo.tasks.base.TaskConfig`
+
+
+   
+   Reward configuration for the cartpole task.
+
+   .. py:attribute:: w_vertical
+      :type:  float
+      :value: 10.0
+
+
+
+   .. py:attribute:: w_centered
+      :type:  float
+      :value: 10.0
+
+
+
+   .. py:attribute:: w_velocity
+      :type:  float
+      :value: 0.1
+
+
+
+   .. py:attribute:: w_control
+      :type:  float
+      :value: 0.1
+
+
+
+   .. py:attribute:: p_vertical
+      :type:  float
+      :value: 0.01
+
+
+
+   .. py:attribute:: p_centered
+      :type:  float
+      :value: 0.1
+
+
+
+.. py:class:: Cartpole(model_path: str = XML_PATH, sim_model_path: str | None = None)
+
+   Bases: :py:obj:`judo.tasks.base.Task`\ [\ :py:obj:`CartpoleConfig`\ ]
+
+
+   
+   Defines the cartpole balancing task.
+
+   .. py:attribute:: name
+      :type:  str
+      :value: 'cartpole'
+
+
+
+   .. py:attribute:: config_t
+      :type:  type[CartpoleConfig]
+
+
+   .. py:method:: reward(states: numpy.ndarray, sensors: numpy.ndarray, controls: numpy.ndarray, system_metadata: dict[str, Any] | None = None) -> numpy.ndarray
+
+      
+      Implements the cartpole reward from MJPC.
+
+      Maps a list of states, list of controls, to a batch of rewards (summed over time) for each rollout.
+
+      The cartpole reward has four terms:
+
+      ::
+
+         * `vertical_rew`, penalizing the distance between the pole angle and vertical.
+         * `centered_rew`, penalizing the distance from the cart to the origin.
+         * `velocity_rew` penalizing squared linear and angular velocity.
+         * `control_rew` penalizing any actuation.
+
+
+      Since we return rewards, each penalty term is returned as negative. The max reward is zero.
+
+      :returns: A list of rewards shaped (batch_size,) where reward at index i represents the reward for that batched traj
+
+
+   .. py:method:: reset() -> None
+
+      
+      Resets the model to a default (random) state.
+
+

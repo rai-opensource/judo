@@ -1,0 +1,146 @@
+judo.tasks.spot.spot_box_push
+=============================
+
+.. py:module:: judo.tasks.spot.spot_box_push
+
+.. autoapi-nested-parse::
+
+   
+   SpotBoxPush task - push a box to a goal location.
+
+   Adapted from starfish/dexterity/tasks/spot_box_push.py.
+
+
+
+
+
+
+Module Contents
+---------------
+
+.. py:data:: XML_PATH
+   :value: ''
+
+
+.. py:data:: RADIUS_MIN
+   :value: 1.0
+
+
+.. py:data:: RADIUS_MAX
+   :value: 2.0
+
+
+.. py:class:: SpotBoxPushConfig
+
+   Bases: :py:obj:`judo.tasks.spot.spot_base.SpotBaseConfig`
+
+
+   
+   Configuration for the SpotBoxPush task.
+
+   .. py:attribute:: w_goal
+      :type:  float
+      :value: 60.0
+
+
+
+   .. py:attribute:: w_orientation
+      :type:  float
+      :value: 15.0
+
+
+
+   .. py:attribute:: w_torso_proximity
+      :type:  float
+      :value: 0.1
+
+
+
+   .. py:attribute:: w_gripper_proximity
+      :type:  float
+      :value: 4.0
+
+
+
+   .. py:attribute:: orientation_threshold
+      :type:  float
+      :value: 0.5
+
+
+
+   .. py:attribute:: fall_penalty
+      :type:  float
+      :value: 2500.0
+
+
+
+   .. py:attribute:: w_controls
+      :type:  float
+      :value: 0.0
+
+
+
+   .. py:attribute:: goal_distance_threshold
+      :type:  float
+      :value: 0.5
+
+
+
+   .. py:attribute:: goal_pos
+      :type:  numpy.ndarray
+
+
+.. py:class:: SpotBoxPush(model_path: str = XML_PATH, config: SpotBoxPushConfig | None = None)
+
+   Bases: :py:obj:`judo.tasks.spot.spot_base.SpotBase`\ [\ :py:obj:`SpotBoxPushConfig`\ ]
+
+
+   
+   Task getting Spot to push a box to a desired goal location.
+
+   .. py:attribute:: name
+      :type:  str
+      :value: 'spot_box_push'
+
+
+
+   .. py:attribute:: config_t
+      :type:  type[SpotBoxPushConfig]
+
+
+   .. py:attribute:: config
+      :type:  SpotBoxPushConfig
+
+
+   .. py:attribute:: body_pose_idx
+
+
+   .. py:attribute:: object_pose_idx
+
+
+   .. py:attribute:: object_y_axis_idx
+
+
+   .. py:attribute:: gripper_pos_idx
+
+
+   .. py:method:: reward(states: numpy.ndarray, sensors: numpy.ndarray, controls: numpy.ndarray, system_metadata: dict[str, Any] | None = None) -> numpy.ndarray
+
+      
+      Reward function for the box push task.
+
+
+   .. py:method:: success(model: mujoco.MjModel, data: mujoco.MjData, metadata: dict[str, Any] | None = None) -> bool
+
+      
+      Check if the box reached the goal and Spot is still standing.
+
+
+   .. py:property:: reset_pose
+      :type: numpy.ndarray
+
+
+      
+      Reset pose for the box push task.
+
+

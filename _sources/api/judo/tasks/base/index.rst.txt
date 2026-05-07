@@ -1,0 +1,223 @@
+judo.tasks.base
+===============
+
+.. py:module:: judo.tasks.base
+
+
+
+
+
+
+Module Contents
+---------------
+
+.. py:class:: TaskConfig
+
+   
+   Base task configuration dataclass.
+
+.. py:data:: ConfigT
+
+.. py:class:: Task(model_path: pathlib.Path | str = '', sim_model_path: pathlib.Path | str | None = None)
+
+   Bases: :py:obj:`abc.ABC`, :py:obj:`Generic`\ [\ :py:obj:`ConfigT`\ ]
+
+
+   
+   Task definition.
+
+   .. py:attribute:: config_t
+      :type:  type[ConfigT]
+
+
+   .. py:attribute:: name
+      :type:  str
+
+
+   .. py:attribute:: config
+
+
+   .. py:attribute:: spec
+
+
+   .. py:attribute:: model
+
+
+   .. py:attribute:: data
+
+
+   .. py:attribute:: model_path
+      :value: ''
+
+
+
+   .. py:attribute:: sim_model
+
+
+   .. py:property:: time
+      :type: float
+
+
+      
+      Returns the current simulation time.
+
+
+   .. py:method:: reward(states: numpy.ndarray, sensors: numpy.ndarray, controls: numpy.ndarray, system_metadata: dict[str, Any] | None = None) -> numpy.ndarray
+      :abstractmethod:
+
+
+      
+      Abstract reward function for task.
+
+      :param states: The rolled out states (after the initial condition). Shape=(num_rollouts, T, nq + nv).
+      :param sensors: The rolled out sensors readings. Shape=(num_rollouts, T, total_num_sensor_dims).
+      :param controls: The rolled out controls. Shape=(num_rollouts, T, nu).
+      :param config: The current task config (passed in from the top-level controller).
+      :param system_metadata: Any additional metadata from the system that is useful for computing the reward. For
+                              example, in the cube rotation task, the system could pass in new goal cube orientations to the
+                              controller here.
+
+      :returns: *rewards* -- The reward for each rollout. Shape=(num_rollouts,).
+
+
+   .. py:property:: nu
+      :type: int
+
+
+      
+      Number of control inputs. The same as the MjModel for this task.
+
+
+   .. py:property:: uses_locomotion_policy
+      :type: bool
+
+
+      
+      Whether this task uses a locomotion policy for simulation.
+
+
+   .. py:property:: actuator_ctrlrange
+      :type: numpy.ndarray
+
+
+      
+      Mujoco actuator limits for this task.
+
+
+   .. py:method:: reset() -> None
+
+      
+      Reset behavior for task. Sets config + velocities to zeros.
+
+
+   .. py:method:: success(model: mujoco.MjModel, data: mujoco.MjData, metadata: dict[str, Any] | None = None) -> bool
+
+      
+      Check if the task was completed successfully. Override in subclasses.
+
+
+   .. py:property:: physics_substeps
+      :type: int
+
+
+      
+      Number of physics steps per control step.
+
+
+   .. py:property:: dt
+      :type: float
+
+
+      
+      Effective timestep (physics_substeps * model timestep).
+
+
+   .. py:method:: pre_rollout(curr_state: numpy.ndarray) -> None
+
+      
+      Pre-rollout behavior for task (does nothing by default).
+
+      :param curr_state: Current state of the task. Shape=(nq + nv,).
+
+
+   .. py:method:: post_rollout(states: numpy.ndarray, sensors: numpy.ndarray, controls: numpy.ndarray, system_metadata: dict[str, Any] | None = None) -> None
+
+      
+      Post-rollout behavior for task (does nothing by default).
+
+      Same inputs as in reward function.
+
+
+   .. py:method:: pre_sim_step() -> None
+
+      
+      Pre-simulation step behavior for task (does nothing by default).
+
+
+   .. py:method:: post_sim_step() -> None
+
+      
+      Post-simulation step behavior for task (does nothing by default).
+
+
+   .. py:method:: get_sim_metadata() -> dict[str, Any]
+
+      
+      Returns metadata from the simulation.
+
+      We need this function because the simulation thread runs separately from the controller thread, but there are
+      task objects in both. This function is used to pass information about the simulation's version of the task to
+      the controller's version of the task.
+
+      For example, the LeapCube task has a goal quaternion that is updated in the simulation thread based on whether
+      the goal was reached (which the controller thread doesn't know about). When a new goal is set, it must be passed
+      to the controller thread via this function.
+
+
+   .. py:method:: optimizer_warm_start() -> numpy.ndarray
+
+      
+      Returns a warm start for the optimizer.
+
+      This is used to provide an initial guess for the optimizer when optimizing the task before any iterations.
+
+
+   .. py:method:: task_to_sim_ctrl(controls: numpy.ndarray) -> numpy.ndarray
+
+      
+      Convert task control format to simulation control format.
+
+      Override in subclasses that use a different control format than the simulator
+      (e.g., Spot tasks that convert to 25-dim locomotion policy commands).
+
+      :param controls: Controls in task format, shape (..., nu).
+
+      :returns: Controls in simulation format (same as input by default).
+
+
+   .. py:method:: get_sensor_start_index(sensor_name: str) -> int
+
+      
+      Returns the starting index of a sensor in the 'sensors' array given the sensor's name.
+
+      :param sensor_name: The name of the sensor to get the index of.
+
+
+   .. py:method:: get_joint_position_start_index(joint_name: str) -> int
+
+      
+      Returns the starting index of a joint's position in the 'states' array given the joint's name.
+
+      :param joint_name: The name of the joint to get the starting index in the position of the state array.
+
+
+   .. py:method:: get_joint_velocity_start_index(joint_name: str) -> int
+
+      
+      Returns the starting index of a joint's velocity in the 'states' array given the joint's name.
+
+      NOTE: This is the index of the joint's velocity in the state array, which is after the position indices!
+
+      :param joint_name: The name of the joint to get the starting index in the state array of.
+
+

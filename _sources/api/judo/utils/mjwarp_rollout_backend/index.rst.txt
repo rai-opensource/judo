@@ -1,0 +1,174 @@
+judo.utils.mjwarp_rollout_backend
+=================================
+
+.. py:module:: judo.utils.mjwarp_rollout_backend
+
+.. autoapi-nested-parse::
+
+   
+   GPU-accelerated rollout backend using mujoco_warp (NVIDIA Warp).
+
+
+
+
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+.. py:data:: NCONMAX
+   :value: 256
+
+
+.. py:data:: NJMAX
+   :value: 900
+
+
+.. py:data:: CCD_ITERATIONS
+   :value: 200
+
+
+.. py:data:: DEVICE
+   :value: 'cuda:0'
+
+
+.. py:class:: PassThroughController
+
+   
+   Passes commands through as target joint positions (no locomotion policy).
+
+   .. py:method:: compute_batch(cmd: warp.array, qpos: warp.array, qvel: warp.array, previous_actions: warp.array | None) -> tuple[warp.array, warp.array | None]
+
+      
+      Return commands directly as targets and preserve previous policy outputs.
+
+
+   .. py:method:: reset() -> None
+
+      
+      Reset controller state (no-op for pass-through mode).
+
+
+   .. py:property:: target_frequency
+      :type: float
+
+
+      
+      Policy update frequency in Hz for pass-through mode.
+
+
+.. py:class:: MJWarpRolloutBackend(model: mujoco.MjModel, num_threads: int, num_problems: int = 1, locomotion_controller: judo.controller.batched_spot_locomotion.BatchedSpotLocomotion | None = None, device: str = DEVICE, check_nan: bool = False)
+
+   Bases: :py:obj:`judo.utils.rollout_backend.BatchedRolloutBackend`
+
+
+   
+   GPU-accelerated rollout backend using mujoco_warp.
+
+   Supports two modes:
+
+
+   * Direct control: controls directly set actuator commands (default)
+   * Hierarchical control: controls are processed through locomotion policy + PD controller
+
+   .. py:attribute:: check_nan
+      :value: False
+
+
+
+   .. py:attribute:: device
+      :value: 'cuda:0'
+
+
+
+   .. py:attribute:: model
+
+
+   .. py:attribute:: data
+
+
+   .. py:attribute:: num_threads
+
+
+   .. py:attribute:: num_problems
+      :value: 1
+
+
+
+   .. py:attribute:: num_worlds
+
+
+   .. py:attribute:: mjw_step_graph
+
+
+   .. py:attribute:: locomotion_controller
+
+
+   .. py:attribute:: policy_decimation
+
+
+   .. py:attribute:: global_step_counter
+      :value: 0
+
+
+
+   .. py:attribute:: timer_cpu_to_gpu
+
+
+   .. py:attribute:: timer_rollout
+
+
+   .. py:attribute:: timer_gpu_to_cpu
+
+
+   .. py:method:: rollout(x0: numpy.ndarray, controls: numpy.ndarray, last_policy_output: warp.array | None = None) -> tuple[numpy.ndarray, numpy.ndarray, warp.array | None]
+
+      
+      Conduct a GPU-accelerated rollout using mujoco_warp.
+
+      Supports both single-problem and multi-problem modes:
+
+
+      * Single problem: x0 shape (nq + nv,), controls shape (num_threads, horizon, nu)
+      * Multi-problem: x0 shape (num_problems, nq + nv), controls shape (num_problems*num_threads, horizon, nu)
+
+      :param x0: Initial state(s) as [qpos, qvel] (no time).
+      :param controls: Control inputs.
+      :param last_policy_output: Previous policy outputs as warp array on GPU,
+                                 shape (num_worlds, policy_dim), or None.
+
+      :returns: *Tuple of (states, sensors, policy_output)* --
+
+      ::
+
+               - states: shape (num_worlds, horizon, nq + nv)
+               - sensors: shape (num_worlds, horizon, nsensordata)
+               - policy_output: Final policy outputs as warp array on GPU, or None.
+
+
+   .. py:method:: update(num_threads: int, num_problems: int = 1) -> None
+
+      
+      Update the backend with a new number of threads.
+
+
+   .. py:method:: print_timer_stats() -> None
+
+      
+      Print timing statistics for all rollout operations.
+
+
+   .. py:method:: reset_timers() -> None
+
+      
+      Reset all timing statistics.
+
+
+   .. py:method:: reset() -> None
+
+      
+      Reset internal state (controllers and step counter).
+
+

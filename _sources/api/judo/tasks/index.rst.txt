@@ -1,0 +1,1472 @@
+judo.tasks
+==========
+
+.. py:module:: judo.tasks
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /api/judo/tasks/base/index
+   /api/judo/tasks/caltech_leap_cube/index
+   /api/judo/tasks/cartpole/index
+   /api/judo/tasks/cost_functions/index
+   /api/judo/tasks/cylinder_push/index
+   /api/judo/tasks/fr3_pick/index
+   /api/judo/tasks/leap_cube/index
+   /api/judo/tasks/leap_cube_down/index
+   /api/judo/tasks/spot/index
+
+
+
+
+
+
+Package Contents
+----------------
+
+.. py:class:: Task(model_path: pathlib.Path | str = '', sim_model_path: pathlib.Path | str | None = None)
+
+   Bases: :py:obj:`abc.ABC`, :py:obj:`Generic`\ [\ :py:obj:`ConfigT`\ ]
+
+
+   
+   Task definition.
+
+   .. py:attribute:: config_t
+      :type:  type[ConfigT]
+
+
+   .. py:attribute:: name
+      :type:  str
+
+
+   .. py:attribute:: config
+
+
+   .. py:attribute:: spec
+
+
+   .. py:attribute:: model
+
+
+   .. py:attribute:: data
+
+
+   .. py:attribute:: model_path
+      :value: ''
+
+
+
+   .. py:attribute:: sim_model
+
+
+   .. py:property:: time
+      :type: float
+
+
+      
+      Returns the current simulation time.
+
+
+   .. py:method:: reward(states: numpy.ndarray, sensors: numpy.ndarray, controls: numpy.ndarray, system_metadata: dict[str, Any] | None = None) -> numpy.ndarray
+      :abstractmethod:
+
+
+      
+      Abstract reward function for task.
+
+      :param states: The rolled out states (after the initial condition). Shape=(num_rollouts, T, nq + nv).
+      :param sensors: The rolled out sensors readings. Shape=(num_rollouts, T, total_num_sensor_dims).
+      :param controls: The rolled out controls. Shape=(num_rollouts, T, nu).
+      :param config: The current task config (passed in from the top-level controller).
+      :param system_metadata: Any additional metadata from the system that is useful for computing the reward. For
+                              example, in the cube rotation task, the system could pass in new goal cube orientations to the
+                              controller here.
+
+      :returns: *rewards* -- The reward for each rollout. Shape=(num_rollouts,).
+
+
+   .. py:property:: nu
+      :type: int
+
+
+      
+      Number of control inputs. The same as the MjModel for this task.
+
+
+   .. py:property:: uses_locomotion_policy
+      :type: bool
+
+
+      
+      Whether this task uses a locomotion policy for simulation.
+
+
+   .. py:property:: actuator_ctrlrange
+      :type: numpy.ndarray
+
+
+      
+      Mujoco actuator limits for this task.
+
+
+   .. py:method:: reset() -> None
+
+      
+      Reset behavior for task. Sets config + velocities to zeros.
+
+
+   .. py:method:: success(model: mujoco.MjModel, data: mujoco.MjData, metadata: dict[str, Any] | None = None) -> bool
+
+      
+      Check if the task was completed successfully. Override in subclasses.
+
+
+   .. py:property:: physics_substeps
+      :type: int
+
+
+      
+      Number of physics steps per control step.
+
+
+   .. py:property:: dt
+      :type: float
+
+
+      
+      Effective timestep (physics_substeps * model timestep).
+
+
+   .. py:method:: pre_rollout(curr_state: numpy.ndarray) -> None
+
+      
+      Pre-rollout behavior for task (does nothing by default).
+
+      :param curr_state: Current state of the task. Shape=(nq + nv,).
+
+
+   .. py:method:: post_rollout(states: numpy.ndarray, sensors: numpy.ndarray, controls: numpy.ndarray, system_metadata: dict[str, Any] | None = None) -> None
+
+      
+      Post-rollout behavior for task (does nothing by default).
+
+      Same inputs as in reward function.
+
+
+   .. py:method:: pre_sim_step() -> None
+
+      
+      Pre-simulation step behavior for task (does nothing by default).
+
+
+   .. py:method:: post_sim_step() -> None
+
+      
+      Post-simulation step behavior for task (does nothing by default).
+
+
+   .. py:method:: get_sim_metadata() -> dict[str, Any]
+
+      
+      Returns metadata from the simulation.
+
+      We need this function because the simulation thread runs separately from the controller thread, but there are
+      task objects in both. This function is used to pass information about the simulation's version of the task to
+      the controller's version of the task.
+
+      For example, the LeapCube task has a goal quaternion that is updated in the simulation thread based on whether
+      the goal was reached (which the controller thread doesn't know about). When a new goal is set, it must be passed
+      to the controller thread via this function.
+
+
+   .. py:method:: optimizer_warm_start() -> numpy.ndarray
+
+      
+      Returns a warm start for the optimizer.
+
+      This is used to provide an initial guess for the optimizer when optimizing the task before any iterations.
+
+
+   .. py:method:: task_to_sim_ctrl(controls: numpy.ndarray) -> numpy.ndarray
+
+      
+      Convert task control format to simulation control format.
+
+      Override in subclasses that use a different control format than the simulator
+      (e.g., Spot tasks that convert to 25-dim locomotion policy commands).
+
+      :param controls: Controls in task format, shape (..., nu).
+
+      :returns: Controls in simulation format (same as input by default).
+
+
+   .. py:method:: get_sensor_start_index(sensor_name: str) -> int
+
+      
+      Returns the starting index of a sensor in the 'sensors' array given the sensor's name.
+
+      :param sensor_name: The name of the sensor to get the index of.
+
+
+   .. py:method:: get_joint_position_start_index(joint_name: str) -> int
+
+      
+      Returns the starting index of a joint's position in the 'states' array given the joint's name.
+
+      :param joint_name: The name of the joint to get the starting index in the position of the state array.
+
+
+   .. py:method:: get_joint_velocity_start_index(joint_name: str) -> int
+
+      
+      Returns the starting index of a joint's velocity in the 'states' array given the joint's name.
+
+      NOTE: This is the index of the joint's velocity in the state array, which is after the position indices!
+
+      :param joint_name: The name of the joint to get the starting index in the state array of.
+
+
+.. py:class:: TaskConfig
+
+   
+   Base task configuration dataclass.
+
+.. py:class:: CaltechLeapCube(model_path: str = XML_PATH, sim_model_path: str = SIM_XML_PATH)
+
+   Bases: :py:obj:`judo.tasks.leap_cube.LeapCube`
+
+
+   
+   Defines the LEAP cube rotation task.
+
+   .. py:attribute:: name
+      :type:  str
+      :value: 'caltech_leap_cube'
+
+
+
+   .. py:attribute:: config_t
+      :type:  type[CaltechLeapCubeConfig]
+
+
+   .. py:attribute:: goal_pos
+
+
+   .. py:attribute:: goal_quat
+
+
+   .. py:attribute:: qpos_home
+
+
+   .. py:attribute:: reset_command
+
+
+.. py:class:: CaltechLeapCubeConfig
+
+   Bases: :py:obj:`judo.tasks.leap_cube.LeapCubeConfig`
+
+
+   
+   Reward configuration LEAP cube rotation task.
+
+.. py:class:: Cartpole(model_path: str = XML_PATH, sim_model_path: str | None = None)
+
+   Bases: :py:obj:`judo.tasks.base.Task`\ [\ :py:obj:`CartpoleConfig`\ ]
+
+
+   
+   Defines the cartpole balancing task.
+
+   .. py:attribute:: name
+      :type:  str
+      :value: 'cartpole'
+
+
+
+   .. py:attribute:: config_t
+      :type:  type[CartpoleConfig]
+
+
+   .. py:method:: reward(states: numpy.ndarray, sensors: numpy.ndarray, controls: numpy.ndarray, system_metadata: dict[str, Any] | None = None) -> numpy.ndarray
+
+      
+      Implements the cartpole reward from MJPC.
+
+      Maps a list of states, list of controls, to a batch of rewards (summed over time) for each rollout.
+
+      The cartpole reward has four terms:
+
+      ::
+
+         * `vertical_rew`, penalizing the distance between the pole angle and vertical.
+         * `centered_rew`, penalizing the distance from the cart to the origin.
+         * `velocity_rew` penalizing squared linear and angular velocity.
+         * `control_rew` penalizing any actuation.
+
+
+      Since we return rewards, each penalty term is returned as negative. The max reward is zero.
+
+      :returns: A list of rewards shaped (batch_size,) where reward at index i represents the reward for that batched traj
+
+
+   .. py:method:: reset() -> None
+
+      
+      Resets the model to a default (random) state.
+
+
+.. py:class:: CartpoleConfig
+
+   Bases: :py:obj:`judo.tasks.base.TaskConfig`
+
+
+   
+   Reward configuration for the cartpole task.
+
+   .. py:attribute:: w_vertical
+      :type:  float
+      :value: 10.0
+
+
+
+   .. py:attribute:: w_centered
+      :type:  float
+      :value: 10.0
+
+
+
+   .. py:attribute:: w_velocity
+      :type:  float
+      :value: 0.1
+
+
+
+   .. py:attribute:: w_control
+      :type:  float
+      :value: 0.1
+
+
+
+   .. py:attribute:: p_vertical
+      :type:  float
+      :value: 0.01
+
+
+
+   .. py:attribute:: p_centered
+      :type:  float
+      :value: 0.1
+
+
+
+.. py:class:: CylinderPush(model_path: str = XML_PATH, sim_model_path: str | None = None)
+
+   Bases: :py:obj:`judo.tasks.base.Task`\ [\ :py:obj:`CylinderPushConfig`\ ]
+
+
+   
+   Defines the cylinder push balancing task.
+
+   .. py:attribute:: name
+      :type:  str
+      :value: 'cylinder_push'
+
+
+
+   .. py:attribute:: config_t
+      :type:  type[CylinderPushConfig]
+
+
+   .. py:method:: reward(states: numpy.ndarray, sensors: numpy.ndarray, controls: numpy.ndarray, system_metadata: dict[str, Any] | None = None) -> numpy.ndarray
+
+      
+      Implements the cylinder push reward from MJPC.
+
+      Maps a list of states, list of controls, to a batch of rewards (summed over time) for each rollout.
+
+      The cylinder push reward has four terms:
+
+      ::
+
+         * `pusher_reward`, penalizing the distance between the pusher and the cart.
+         * `velocity_reward` penalizing squared linear velocity of the pusher.
+         * `goal_reward`, penalizing the distance from the cart to the goal.
+
+
+      Since we return rewards, each penalty term is returned as negative. The max reward is zero.
+
+
+   .. py:method:: success(model: mujoco.MjModel, data: mujoco.MjData, metadata: dict[str, Any] | None = None) -> bool
+
+      
+      Check if the cart is close to the goal position.
+
+
+   .. py:method:: reset() -> None
+
+      
+      Resets the model to a default (random) state.
+
+
+.. py:class:: CylinderPushConfig
+
+   Bases: :py:obj:`judo.tasks.base.TaskConfig`
+
+
+   
+   Reward configuration for the cylinder push task.
+
+   .. py:attribute:: w_pusher_proximity
+      :type:  float
+      :value: 0.5
+
+
+
+   .. py:attribute:: w_pusher_velocity
+      :type:  float
+      :value: 0.0
+
+
+
+   .. py:attribute:: w_cart_position
+      :type:  float
+      :value: 0.1
+
+
+
+   .. py:attribute:: pusher_goal_offset
+      :type:  float
+      :value: 0.25
+
+
+
+   .. py:attribute:: goal_pos
+      :type:  numpy.ndarray
+
+
+.. py:class:: FR3Pick(model_path: str = XML_PATH, sim_model_path: str | None = None)
+
+   Bases: :py:obj:`judo.tasks.base.Task`\ [\ :py:obj:`FR3PickConfig`\ ]
+
+
+   
+   Defines the FR3 pick task.
+
+   .. py:attribute:: name
+      :type:  str
+      :value: 'fr3_pick'
+
+
+
+   .. py:attribute:: config_t
+      :type:  type[FR3PickConfig]
+
+
+   .. py:attribute:: reset_command
+
+
+   .. py:attribute:: obj_pos_adr
+
+
+   .. py:attribute:: obj_pos_slice
+
+
+   .. py:attribute:: obj_vel_slice
+
+
+   .. py:attribute:: obj_angvel_slice
+
+
+   .. py:attribute:: arm_pos_slice
+
+
+   .. py:attribute:: left_finger_obj_adr
+
+
+   .. py:attribute:: right_finger_obj_adr
+
+
+   .. py:attribute:: left_finger_table_adr
+
+
+   .. py:attribute:: right_finger_table_adr
+
+
+   .. py:attribute:: grasp_site_adr
+
+
+   .. py:attribute:: obj_table_adr
+
+
+   .. py:attribute:: ee_z_adr
+
+
+   .. py:attribute:: ee_z_slice
+
+
+   .. py:attribute:: phase
+
+
+   .. py:method:: in_goal_xy(curr_state: numpy.ndarray) -> numpy.ndarray
+
+      
+      Checks if the object is somewhere in the tube above the goal position of radius r.
+
+      :param curr_state: The current state value. Shape=(nq + nv,).
+      :param config: The task configuration.
+
+      :returns: *in_goal* -- A bool indicating whether the object is in the goal region. Shape=(,).
+
+
+   .. py:method:: check_sensor_dists(sensors: numpy.ndarray, pair: Literal['left_finger_obj', 'right_finger_obj', 'left_finger_table', 'right_finger_table', 'obj_table']) -> numpy.ndarray
+
+      
+      Computes the distance between a specified pair of bodies.
+
+      :param sensors: The sensor values. Shape=(num_rollouts, T, total_sensor_dim).
+      :param pair: The pair of bodies to check contact for. One of "left_finger_obj", "right_finger_obj", or "obj_table".
+
+      :returns: *dist* -- An array indicating the distance between the specified pair. Shape=(num_rollouts, T).
+
+
+   .. py:method:: pre_rollout(curr_state: numpy.ndarray) -> None
+
+      
+      Computes the current phase of the system.
+
+
+   .. py:method:: reward(states: numpy.ndarray, sensors: numpy.ndarray, controls: numpy.ndarray, system_metadata: dict[str, Any] | None = None) -> numpy.ndarray
+
+      
+      Implements the LEAP cube rotation tracking task reward.
+
+      The reward function switches between 4 modes:
+
+
+      * LIFT: The object is lifted from the table.
+      * MOVE: The object is moved to the goal position.
+      * PLACE: The object is placed on the table.
+      * HOMING: The robot arm is returned to the home position.
+
+      There are also global rewards that are always applied:
+
+
+      * Upright: The end-effector is upright.
+      * Collision: The robot hand is not touching the table.
+      * Qvel: The robot arm is not moving too fast.
+
+
+   .. py:method:: reset() -> None
+
+      
+      Resets the model to a default state with random goal.
+
+
+.. py:class:: FR3PickConfig
+
+   Bases: :py:obj:`judo.tasks.base.TaskConfig`
+
+
+   
+   Reward configuration for FR3 pick task.
+
+   .. py:attribute:: lift_weights
+      :type:  LiftConfig
+
+
+   .. py:attribute:: move_weights
+      :type:  MoveConfig
+
+
+   .. py:attribute:: place_weights
+      :type:  PlaceConfig
+
+
+   .. py:attribute:: global_weights
+      :type:  GlobalConfig
+
+
+   .. py:attribute:: goal_pos
+      :type:  numpy.ndarray
+
+
+   .. py:attribute:: goal_radius
+      :type:  float
+      :value: 0.05
+
+
+
+   .. py:attribute:: pick_height
+      :type:  float
+      :value: 0.3
+
+
+
+.. py:class:: LeapCube(model_path: str = XML_PATH, sim_model_path: str | None = SIM_XML_PATH)
+
+   Bases: :py:obj:`judo.tasks.base.Task`\ [\ :py:obj:`LeapCubeConfig`\ ]
+
+
+   
+   Defines the LEAP cube rotation task.
+
+   .. py:attribute:: name
+      :type:  str
+      :value: 'leap_cube'
+
+
+
+   .. py:attribute:: config_t
+      :type:  type[LeapCubeConfig]
+
+
+   .. py:attribute:: goal_pos
+
+
+   .. py:attribute:: goal_quat
+
+
+   .. py:attribute:: qpos_home
+
+
+   .. py:attribute:: reset_command
+
+
+   .. py:method:: reward(states: numpy.ndarray, sensors: numpy.ndarray, controls: numpy.ndarray, system_metadata: dict[str, Any] | None = None) -> numpy.ndarray
+
+      
+      Implements the LEAP cube rotation tracking task reward.
+
+
+   .. py:method:: post_sim_step() -> None
+
+      
+      Checks if the cube has dropped and resets if so.
+
+
+   .. py:method:: reset() -> None
+
+      
+      Resets the model to a default state with random goal.
+
+
+   .. py:method:: get_sim_metadata() -> dict[str, Any]
+
+      
+      Returns the simulation's goal quat.
+
+
+.. py:class:: LeapCubeConfig
+
+   Bases: :py:obj:`judo.tasks.base.TaskConfig`
+
+
+   
+   Reward configuration LEAP cube rotation task.
+
+   .. py:attribute:: w_pos
+      :type:  float
+      :value: 100.0
+
+
+
+   .. py:attribute:: w_rot
+      :type:  float
+      :value: 0.1
+
+
+
+.. py:class:: LeapCubeDown(model_path: str = XML_PATH, sim_model_path: str = SIM_XML_PATH)
+
+   Bases: :py:obj:`judo.tasks.leap_cube.LeapCube`
+
+
+   
+   Defines the LEAP cube with palm down rotation task.
+
+   .. py:attribute:: name
+      :type:  str
+      :value: 'leap_cube_down'
+
+
+
+   .. py:attribute:: config_t
+      :type:  type[LeapCubeDownConfig]
+
+
+   .. py:attribute:: goal_pos
+
+
+   .. py:attribute:: goal_quat
+
+
+   .. py:attribute:: qpos_home
+
+
+   .. py:attribute:: reset_command
+
+
+.. py:class:: LeapCubeDownConfig
+
+   Bases: :py:obj:`judo.tasks.leap_cube.LeapCubeConfig`
+
+
+   
+   Reward configuration LEAP cube rotation task.
+
+   .. py:attribute:: w_rot
+      :type:  float
+      :value: 0.05
+
+
+
+.. py:class:: SpotBase(model_path: str = XML_PATH, use_arm: bool = True, use_gripper: bool = False, use_legs: bool = False, use_torso: bool = False, config: SpotBaseConfig | None = None)
+
+   Bases: :py:obj:`judo.tasks.base.Task`\ [\ :py:obj:`ConfigT`\ ], :py:obj:`Generic`\ [\ :py:obj:`ConfigT`\ ]
+
+
+   
+   Flexible base task for Spot locomotion/skills.
+
+   This class mirrors starfish/dexterity/tasks/spot_base.py but adapted
+   for judo's standalone simulation framework.
+
+   Controls are a compact vector mapped to the 25-dim policy command:
+
+
+   * Base only:                        [base_vel(3)]
+   * Base + Arm:                       [base_vel(3), arm_cmd(7)]
+   * Base + Legs:                      [base_vel(3), front_leg_cmd(6), leg_selection(1)]
+   * Base + Arm + Legs:                [base_vel(3), arm_cmd(7), front_leg_cmd(6), leg_selection(1)]
+   * With Torso:                       [..., torso_cmd(3)]  (appended to any of the above)
+
+   The mapping to the 25-dim policy command is done in task_to_sim_ctrl.
+
+   .. py:attribute:: name
+      :type:  str
+      :value: 'spot_base'
+
+
+
+   .. py:attribute:: config_t
+      :type:  type[SpotBaseConfig]
+
+
+   .. py:property:: physics_substeps
+      :type: int
+
+
+      
+      Number of physics steps per control step.
+
+
+   .. py:property:: uses_locomotion_policy
+      :type: bool
+
+
+      
+      Spot tasks always use a locomotion policy backend.
+
+
+   .. py:attribute:: use_arm
+      :value: True
+
+
+
+   .. py:attribute:: use_gripper
+      :value: False
+
+
+
+   .. py:attribute:: use_legs
+      :value: False
+
+
+
+   .. py:attribute:: use_torso
+      :value: False
+
+
+
+   .. py:attribute:: leg_selection_index
+      :type:  int | None
+      :value: None
+
+
+
+   .. py:attribute:: gripper_selection_index
+      :type:  int | None
+      :value: None
+
+
+
+   .. py:attribute:: default_policy_command
+
+
+   .. py:attribute:: body_pose_idx
+
+
+   .. py:property:: nu
+      :type: int
+
+
+      
+      Number of control inputs for this task.
+
+
+   .. py:property:: actuator_ctrlrange
+      :type: numpy.ndarray
+
+
+      
+      Control bounds for the task action space.
+
+
+   .. py:method:: set_command_values() -> None
+
+      
+      Update default_command and command_mask based on enabled features.
+
+
+   .. py:method:: apply_selection_mask(controls: numpy.ndarray) -> numpy.ndarray
+
+      
+      Activate or deactivate leg and gripper commands based on selection values.
+
+      leg selection:
+      -1.0 to -0.5: manipulation with left leg
+      -0.5 to +0.5: no leg manipulation
+      +0.5 to +1.0: manipulation with right leg
+
+      gripper selection:
+      -1.0 to 0.0: gripper closed
+      0.0 to +1.0: gripper open
+
+      :param controls: Control array with selection indices.
+
+      :returns: Controls with selection indices removed and masks applied.
+
+
+   .. py:method:: task_to_sim_ctrl(controls: numpy.ndarray) -> numpy.ndarray
+
+      
+      Map compact controls to 25-dim policy command for C++ rollout.
+
+      Layout of 25-dim policy command:
+      [0:3]   torso_vel_cmd (base velocity)
+      [3:10]  arm_cmd (7 arm joints)
+      [10:22] leg_cmd (4 legs x 3, used for override)
+      [22:25] torso_pos_cmd (roll, pitch, height)
+
+      :param controls: Compact control array of shape (..., nu).
+
+      :returns: Policy command array of shape (..., 25).
+
+
+   .. py:method:: reward(states: numpy.ndarray, sensors: numpy.ndarray, controls: numpy.ndarray, system_metadata: dict[str, Any] | None = None) -> numpy.ndarray
+
+      
+      Base reward function (returns zeros).
+
+      Override in subclasses for task-specific rewards.
+
+      :param states: Rolled out states, shape (num_rollouts, T, nq+nv).
+      :param sensors: Sensor readings, shape (num_rollouts, T, nsensor).
+      :param controls: Control inputs, shape (num_rollouts, T, nu).
+      :param system_metadata: Optional metadata from the system.
+
+      :returns: Rewards for each rollout, shape (num_rollouts,).
+
+
+   .. py:property:: reset_arm_pos
+      :type: numpy.ndarray
+
+
+      
+      Reset position of the arm based on use_arm setting.
+
+
+   .. py:property:: reset_pose
+      :type: numpy.ndarray
+
+
+      
+      Default reset pose for the robot (using RL training defaults).
+
+
+   .. py:method:: optimizer_warm_start() -> numpy.ndarray
+
+      
+      Warm start from default command (arm unstowed, legs standing).
+
+
+   .. py:method:: success(model: mujoco.MjModel, data: mujoco.MjData, metadata: dict[str, Any] | None = None) -> bool
+
+      
+      Check that Spot is still standing. Subclasses should AND with super().success().
+
+
+   .. py:method:: reset() -> None
+
+      
+      Reset the simulation to the default pose.
+
+
+   .. py:method:: get_action_components() -> list[str]
+
+      
+      Get names of each component in the action command vector.
+
+      Matches judo/tasks/spot/spot_base.py.
+
+
+.. py:class:: SpotBaseConfig
+
+   Bases: :py:obj:`judo.tasks.base.TaskConfig`
+
+
+   
+   Base configuration for Spot tasks.
+
+   Values match starfish/dexterity/tasks/spot_base.py.
+
+   .. py:attribute:: fall_penalty
+      :type:  float
+      :value: 2500.0
+
+
+
+   .. py:attribute:: spot_fallen_threshold
+      :type:  float
+      :value: 0.35
+
+
+
+   .. py:attribute:: w_goal
+      :type:  float
+      :value: 60.0
+
+
+
+   .. py:attribute:: w_controls
+      :type:  float
+      :value: 0.0
+
+
+
+.. py:class:: SpotBoxPush(model_path: str = XML_PATH, config: SpotBoxPushConfig | None = None)
+
+   Bases: :py:obj:`judo.tasks.spot.spot_base.SpotBase`\ [\ :py:obj:`SpotBoxPushConfig`\ ]
+
+
+   
+   Task getting Spot to push a box to a desired goal location.
+
+   .. py:attribute:: name
+      :type:  str
+      :value: 'spot_box_push'
+
+
+
+   .. py:attribute:: config_t
+      :type:  type[SpotBoxPushConfig]
+
+
+   .. py:attribute:: config
+      :type:  SpotBoxPushConfig
+
+
+   .. py:attribute:: body_pose_idx
+
+
+   .. py:attribute:: object_pose_idx
+
+
+   .. py:attribute:: object_y_axis_idx
+
+
+   .. py:attribute:: gripper_pos_idx
+
+
+   .. py:method:: reward(states: numpy.ndarray, sensors: numpy.ndarray, controls: numpy.ndarray, system_metadata: dict[str, Any] | None = None) -> numpy.ndarray
+
+      
+      Reward function for the box push task.
+
+
+   .. py:method:: success(model: mujoco.MjModel, data: mujoco.MjData, metadata: dict[str, Any] | None = None) -> bool
+
+      
+      Check if the box reached the goal and Spot is still standing.
+
+
+   .. py:property:: reset_pose
+      :type: numpy.ndarray
+
+
+      
+      Reset pose for the box push task.
+
+
+.. py:class:: SpotBoxPushConfig
+
+   Bases: :py:obj:`judo.tasks.spot.spot_base.SpotBaseConfig`
+
+
+   
+   Configuration for the SpotBoxPush task.
+
+   .. py:attribute:: w_goal
+      :type:  float
+      :value: 60.0
+
+
+
+   .. py:attribute:: w_orientation
+      :type:  float
+      :value: 15.0
+
+
+
+   .. py:attribute:: w_torso_proximity
+      :type:  float
+      :value: 0.1
+
+
+
+   .. py:attribute:: w_gripper_proximity
+      :type:  float
+      :value: 4.0
+
+
+
+   .. py:attribute:: orientation_threshold
+      :type:  float
+      :value: 0.5
+
+
+
+   .. py:attribute:: fall_penalty
+      :type:  float
+      :value: 2500.0
+
+
+
+   .. py:attribute:: w_controls
+      :type:  float
+      :value: 0.0
+
+
+
+   .. py:attribute:: goal_distance_threshold
+      :type:  float
+      :value: 0.5
+
+
+
+   .. py:attribute:: goal_pos
+      :type:  numpy.ndarray
+
+
+.. py:class:: SpotNavigate(model_path: str = XML_PATH, config: SpotNavigateConfig | None = None)
+
+   Bases: :py:obj:`judo.tasks.spot.spot_base.SpotBase`\ [\ :py:obj:`SpotNavigateConfig`\ ]
+
+
+   
+   Task getting Spot to navigate to a desired goal location.
+
+   .. py:attribute:: name
+      :type:  str
+      :value: 'spot_navigate'
+
+
+
+   .. py:attribute:: config_t
+      :type:  type[SpotNavigateConfig]
+
+
+   .. py:attribute:: config
+      :type:  SpotNavigateConfig
+
+
+   .. py:attribute:: body_pose_idx
+
+
+   .. py:method:: reward(states: numpy.ndarray, sensors: numpy.ndarray, controls: numpy.ndarray, system_metadata: dict[str, Any] | None = None) -> numpy.ndarray
+
+      
+      Reward function for the navigate task.
+
+
+   .. py:method:: success(model: mujoco.MjModel, data: mujoco.MjData, metadata: dict[str, Any] | None = None) -> bool
+
+      
+      Check if Spot reached the goal and is still standing.
+
+
+   .. py:property:: reset_pose
+      :type: numpy.ndarray
+
+
+      
+      Reset pose for the navigate task with random initial xy position.
+
+
+.. py:class:: SpotNavigateConfig
+
+   Bases: :py:obj:`judo.tasks.spot.spot_base.SpotBaseConfig`
+
+
+   
+   Configuration for the SpotNavigate task.
+
+   .. py:attribute:: w_goal
+      :type:  float
+      :value: 60.0
+
+
+
+   .. py:attribute:: fall_penalty
+      :type:  float
+      :value: 2500.0
+
+
+
+   .. py:attribute:: w_controls
+      :type:  float
+      :value: 0.0
+
+
+
+   .. py:attribute:: goal_distance_threshold
+      :type:  float
+      :value: 0.5
+
+
+
+   .. py:attribute:: goal_pos
+      :type:  numpy.ndarray
+
+
+.. py:class:: SpotTireRoll(model_path: str = XML_PATH, config: SpotTireRollConfig | None = None)
+
+   Bases: :py:obj:`judo.tasks.spot.spot_base.SpotBase`\ [\ :py:obj:`SpotTireRollConfig`\ ]
+
+
+   
+   Task getting Spot to roll a tire to a desired goal location.
+
+   .. py:attribute:: name
+      :type:  str
+      :value: 'spot_tire_roll'
+
+
+
+   .. py:attribute:: config_t
+      :type:  type[SpotTireRollConfig]
+
+
+   .. py:attribute:: config
+      :type:  SpotTireRollConfig
+
+
+   .. py:attribute:: body_pose_idx
+
+
+   .. py:attribute:: object_pose_idx
+
+
+   .. py:attribute:: gripper_pos_idx
+
+
+   .. py:attribute:: object_y_axis_idx
+
+
+   .. py:attribute:: object_vel_idx
+
+
+   .. py:method:: reward(states: numpy.ndarray, sensors: numpy.ndarray, controls: numpy.ndarray, system_metadata: dict[str, Any] | None = None) -> numpy.ndarray
+
+      
+      Reward function for the tire roll task.
+
+
+   .. py:method:: success(model: mujoco.MjModel, data: mujoco.MjData, metadata: dict[str, Any] | None = None) -> bool
+
+      
+      Check if the tire is at goal, upright, and Spot is still standing.
+
+
+   .. py:property:: reset_pose
+      :type: numpy.ndarray
+
+
+      
+      Reset pose for the tire roll task.
+
+
+.. py:class:: SpotTireRollConfig
+
+   Bases: :py:obj:`judo.tasks.spot.spot_base.SpotBaseConfig`
+
+
+   
+   Configuration for the SpotTireRoll task.
+
+   .. py:attribute:: fall_penalty
+      :type:  float
+      :value: 5000.0
+
+
+
+   .. py:attribute:: tire_fallen_threshold
+      :type:  float
+      :value: 0.1
+
+
+
+   .. py:attribute:: w_goal
+      :type:  float
+      :value: 60.0
+
+
+
+   .. py:attribute:: w_torso_proximity
+      :type:  float
+      :value: 1.0
+
+
+
+   .. py:attribute:: torso_goal_offset
+      :type:  float
+      :value: 1.0
+
+
+
+   .. py:attribute:: w_gripper_proximity
+      :type:  float
+      :value: 1.0
+
+
+
+   .. py:attribute:: gripper_goal_offset
+      :type:  float
+      :value: 0.15
+
+
+
+   .. py:attribute:: gripper_goal_altitude
+      :type:  float
+      :value: 0.05
+
+
+
+   .. py:attribute:: w_tire_linear_velocity
+      :type:  float
+      :value: 10.0
+
+
+
+   .. py:attribute:: w_tire_angular_velocity
+      :type:  float
+      :value: 0.3
+
+
+
+   .. py:attribute:: w_controls
+      :type:  float
+      :value: 0.0
+
+
+
+   .. py:attribute:: goal_distance_threshold
+      :type:  float
+      :value: 0.5
+
+
+
+   .. py:attribute:: goal_pos
+      :type:  numpy.ndarray
+
+
+.. py:class:: SpotTireUpright(model_path: str = XML_PATH, config: SpotTireUprightConfig | None = None)
+
+   Bases: :py:obj:`judo.tasks.spot.spot_base.SpotBase`\ [\ :py:obj:`SpotTireUprightConfig`\ ]
+
+
+   
+   Task for getting Spot to upright a tire that's lying flat.
+
+   The goal is to manipulate the tire from a lying flat position to an
+   upright position (y-axis horizontal). Spot can use its arm gripper
+   and front legs to accomplish this task.
+
+   This class mirrors starfish/dexterity/tasks/spot_tire_upright.py.
+
+   .. py:attribute:: name
+      :type:  str
+      :value: 'spot_tire_upright'
+
+
+
+   .. py:attribute:: config_t
+      :type:  type[SpotTireUprightConfig]
+
+
+   .. py:attribute:: config
+      :type:  SpotTireUprightConfig
+
+
+   .. py:method:: reward(states: numpy.ndarray, sensors: numpy.ndarray, controls: numpy.ndarray, system_metadata: dict[str, Any] | None = None) -> numpy.ndarray
+
+      
+      Reward function for the tire uprighting task.
+
+      This matches the reward function in starfish/dexterity/tasks/spot_tire_upright.py.
+
+      :param states: Rolled out states, shape (num_rollouts, T, nq+nv).
+      :param sensors: Sensor readings, shape (num_rollouts, T, nsensor).
+      :param controls: Control inputs, shape (num_rollouts, T, nu).
+      :param system_metadata: Optional metadata from the system.
+
+      :returns: Rewards for each rollout, shape (num_rollouts,).
+
+
+   .. py:property:: reset_pose
+      :type: numpy.ndarray
+
+
+      
+      Reset pose of robot and tire - tire starts lying flat.
+
+      :returns: Initial qpos array with random robot and tire positions.
+
+
+   .. py:method:: success(model: mujoco.MjModel, data: mujoco.MjData, metadata: dict[str, Any] | None = None) -> bool
+
+      
+      Check if the tire is upright (y-axis horizontal).
+
+      :param model: MuJoCo model.
+      :param data: MuJoCo data.
+      :param metadata: Optional task metadata.
+
+      :returns: True if the tire is upright.
+
+
+.. py:class:: SpotTireUprightConfig
+
+   Bases: :py:obj:`judo.tasks.spot.spot_base.SpotBaseConfig`
+
+
+   
+   Configuration for the SpotTireUpright task.
+
+   Values match starfish/dexterity/tasks/spot_tire_upright.py.
+
+   .. py:attribute:: orientation_error_smoothing_width
+      :type:  float
+      :value: 1.0
+
+
+
+   .. py:attribute:: w_tire_orientation
+      :type:  float
+      :value: 200.0
+
+
+
+   .. py:attribute:: w_gripper_proximity
+      :type:  float
+      :value: 10.0
+
+
+
+   .. py:attribute:: w_foot_proximity
+      :type:  float
+      :value: 5.0
+
+
+
+   .. py:attribute:: w_torso_proximity
+      :type:  float
+      :value: 5.0
+
+
+
+   .. py:attribute:: gripper_too_inside_tire_penalty
+      :type:  float
+      :value: 150.0
+
+
+
+   .. py:attribute:: gripper_not_above_tire_penalty
+      :type:  float
+      :value: 100.0
+
+
+
+   .. py:attribute:: w_controls
+      :type:  float
+      :value: 2.0
+
+
+
+   .. py:attribute:: fall_penalty
+      :type:  float
+      :value: 10000.0
+
+
+
+.. py:class:: TaskRegistration
+
+   
+   Complete registration metadata for a task.
+
+   .. py:attribute:: task_type
+      :type:  Type[base.Task]
+
+
+   .. py:attribute:: task_config_type
+      :type:  Type[base.TaskConfig]
+
+
+   .. py:attribute:: rollout_backend
+      :type:  str
+      :value: 'mujoco'
+
+
+
+   .. py:attribute:: simulation_backend
+      :type:  str
+      :value: 'mujoco'
+
+
+
+   .. py:attribute:: locomotion_policy_path
+      :type:  str | None
+      :value: None
+
+
+
+.. py:function:: get_registered_tasks() -> Dict[str, TaskRegistration]
+
+   
+   Returns a dictionary of registered tasks.
+
+.. py:function:: get_task_registration(task_name: str) -> TaskRegistration
+
+   
+   Return full registration metadata for a task.
+
+.. py:function:: register_task(name: str, task_type: Type[base.Task], task_config_type: Type[base.TaskConfig], rollout_backend: str = 'mujoco', simulation_backend: str = 'mujoco', locomotion_policy_path: str | None = None) -> None
+
+   
+   Registers a new task and its default controller/simulation backends.
+

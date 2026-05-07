@@ -1,0 +1,84 @@
+judo.utils.math_utils
+=====================
+
+.. py:module:: judo.utils.math_utils
+
+
+
+
+Module Contents
+---------------
+
+.. py:function:: safe_normalize_axis(axis: numpy.ndarray, eps: float = 1e-06) -> numpy.ndarray
+
+   
+   Safely normalizes a batch of 3D axis vectors, avoiding division by zero.
+
+   If the norm of an axis is less than ``eps``\ , it defaults to [1, 0, 0].
+
+   :param axis: The unnormalized axis vectors. Shape = (..., 3).
+   :param eps: Small threshold to avoid division by zero.
+
+   :returns: Normalized axis vectors. Shape = (..., 3).
+
+.. py:function:: quat_inv(u: numpy.ndarray) -> numpy.ndarray
+
+   
+   Inverts a quaternion in a way that can broadcast cleanly.
+
+   :param u: quat in wxyz order. Shape=(*u_dims, 4).
+
+   :returns: *result* -- quat in wxyz order. Shape=(*u_dims, 4).
+
+.. py:function:: quat_mul(u: numpy.ndarray, v: numpy.ndarray) -> numpy.ndarray
+
+   
+   Multiplies two quaternions in a way that can broadcast cleanly.
+
+   The leading dimensions of u and v do not have to match - only the trailing dims.
+
+   :param u: quat in wxyz order. Shape=(\ *u_dims, 4).
+   :param v: quat in wxyz order. Shape=(*\ v_dims, 4).
+
+   :returns: *result* -- quat in wxyz order. Shape=(*(u_dims or v_dims), 4). The longer leading dims of u or v are used.
+
+.. py:function:: quat_diff(u: numpy.ndarray, v: numpy.ndarray) -> numpy.ndarray
+
+   
+   Computes the 'quaternion difference' between two quaternions: u^* \otimes v.
+
+   :param u: quat in wxyz order. Shape=(\ *u_dims, 4).
+   :param v: quat in wxyz order. Shape=(*\ v_dims, 4).
+
+   :returns: *result* -- quat in wxyz order. Shape=(*(u_dims or v_dims), 4). The longer leading dims of u or v are used.
+
+.. py:function:: axis_angle_diff(u: numpy.ndarray, v: numpy.ndarray) -> tuple[numpy.ndarray, numpy.ndarray]
+
+   
+   Computes the 'axis-angle difference' between two quaternions: 2 * vec(u^* \otimes v).
+
+   :param u: quat in wxyz order. Shape=(\ *u_dims, 4).
+   :param v: quat in wxyz order. Shape=(*\ v_dims, 4).
+
+   :returns: *angle* -- The angle of rotation in radians. Shape=(\ *(u_dims or v_dims),).
+             axis: The axis of rotation. Shape=(*\ (u_dims or v_dims), 3).
+
+.. py:function:: quat_diff_so3(u: numpy.ndarray, v: numpy.ndarray) -> numpy.ndarray
+
+   
+   Computes the 'quaternion difference' between two quaternions and then takes the Log map.
+
+.. py:function:: quat_vel(u: numpy.ndarray, v: numpy.ndarray, dt: float) -> numpy.ndarray
+
+   
+   Estimates the angular velocity between two quaternions.
+
+   Uses the formula
+       omega = (2.0 * u^{-1} * [(v - u) / dt])[1:],
+   where [1:] denotes taking the vector part only.
+
+   This is derived from the general differential formula
+       omega = 2 * vec(u^* \otimes \dot{q}).
+
+   Source: mariogc.com/post/angular-velocity-quaternions
+

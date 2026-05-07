@@ -1,0 +1,35 @@
+judo.simulation.mj_simulation
+=============================
+
+.. py:module:: judo.simulation.mj_simulation
+
+.. autoapi-nested-parse::
+
+   
+   MuJoCo Simulation with direct actuator control.
+
+
+
+
+Module Contents
+---------------
+
+.. py:class:: MJSimulation(init_task: str = 'spot_base', task_registration_cfg: omegaconf.DictConfig | None = None)
+
+   Bases: :py:obj:`judo.simulation.base.Simulation`
+
+
+   
+   MuJoCo simulation with direct actuator control.
+
+   Applies controls directly to MuJoCo actuators and steps
+   the physics simulation forward.
+
+   .. py:method:: step(command: numpy.ndarray) -> None
+
+      
+      Step the simulation forward.
+
+      :param command: Control command for this timestep.
+
+

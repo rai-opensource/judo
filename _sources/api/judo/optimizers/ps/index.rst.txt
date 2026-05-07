@@ -1,0 +1,66 @@
+judo.optimizers.ps
+==================
+
+.. py:module:: judo.optimizers.ps
+
+
+
+
+Module Contents
+---------------
+
+.. py:class:: PredictiveSamplingConfig
+
+   Bases: :py:obj:`judo.optimizers.base.OptimizerConfig`
+
+
+   
+   Configuration for predictive sampling.
+
+   .. py:attribute:: sigma
+      :type:  float
+      :value: 0.05
+
+
+
+.. py:class:: PredictiveSampling(config: PredictiveSamplingConfig, nu: int)
+
+   Bases: :py:obj:`judo.optimizers.base.Optimizer`\ [\ :py:obj:`PredictiveSamplingConfig`\ ]
+
+
+   
+   Predictive sampling planner.
+
+   .. py:property:: sigma
+      :type: float
+
+
+      
+      Get the sigma value.
+
+
+   .. py:method:: sample_control_knots(nominal_knots: numpy.ndarray) -> numpy.ndarray
+
+      
+      Samples control knots given a nominal control input.
+
+      Predictive sampling adds fixed Gaussian noise to the nominal control input.
+
+      :param nominal_knots: The nominal control input to sample from. Shape=(num_nodes, nu).
+
+      :returns: *sampled_knots* -- The sampled control input. Shape=(num_rollouts, num_nodes, nu).
+
+
+   .. py:method:: update_nominal_knots(sampled_knots: numpy.ndarray, rewards: numpy.ndarray) -> numpy.ndarray
+
+      
+      Update the nominal control knots based on the sampled controls and rewards.
+
+      Predictive sampling takes the best sampled control input.
+
+      :param sampled_knots: The sampled control input. Shape=(num_rollouts, num_nodes, nu).
+      :param rewards: The rewards for each sampled control input. Shape=(num_rollouts,).
+
+      :returns: *nominal_knots* -- The updated nominal control input. Shape=(num_nodes, nu).
+
+
