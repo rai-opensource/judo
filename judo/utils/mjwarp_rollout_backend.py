@@ -10,7 +10,7 @@ import warp as wp
 from mujoco import MjData, MjModel
 
 from judo.controller.batched_spot_locomotion import BatchedSpotLocomotion
-from judo.utils.rollout_backend import RolloutBackend
+from judo.utils.rollout_backend import BatchedRolloutBackend
 from judo.utils.timer import Timer
 
 logger = logging.getLogger(__name__)
@@ -56,7 +56,7 @@ class PassThroughController:
         return float("inf")
 
 
-class MJWarpRolloutBackend(RolloutBackend):
+class MJWarpRolloutBackend(BatchedRolloutBackend):
     """GPU-accelerated rollout backend using mujoco_warp.
 
     Supports two modes:

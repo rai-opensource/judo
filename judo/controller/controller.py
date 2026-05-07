@@ -3,7 +3,7 @@
 import copy
 import warnings
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Callable, Literal
 
 import numpy as np
 from mujoco import MjData
@@ -26,14 +26,11 @@ from judo.utils.normalization import (
     make_normalizer,
     normalizer_registry,
 )
-from judo.utils.rollout_backend import RolloutBackend
+from judo.utils.rollout_backend import BatchedRolloutBackend, RolloutBackend
 from judo.utils.timer import Timer
 from judo.visualizers.utils import get_trace_sensors
 
-if TYPE_CHECKING:
-    from judo.utils.mjwarp_rollout_backend import MJWarpRolloutBackend
-
-RolloutBackendEntry = type[RolloutBackend]
+RolloutBackendEntry = type[RolloutBackend] | Callable[..., RolloutBackend]
 
 
 DEFAULT_ROLLOUT_BACKEND_REGISTRY: dict[str, RolloutBackendEntry] = {
@@ -64,7 +61,7 @@ class Controller:
         controller_config: ControllerConfig,
         task: Task,
         optimizer: Optimizer,
-        rollout_backend: "str | MJWarpRolloutBackend" = "mujoco",
+        rollout_backend: str = "mujoco",
         rollout_backend_registry: dict[str, RolloutBackendEntry] | None = None,
         rollout_backend_kwargs: dict[str, Any] | None = None,
     ) -> None:
@@ -74,8 +71,7 @@ class Controller:
             controller_config: The controller configuration.
             task: The task to use.
             optimizer: The optimizer to use.
-            rollout_backend: Name of the backend to use for rollouts (e.g., "mujoco", "mujoco_hierarchical"),
-                or a pre-built RolloutBackend instance to use directly (e.g., a shared MJWarpRolloutBackend).
+            rollout_backend: Name of the backend to use for rollouts (e.g., "mujoco", "mujoco_hierarchical").
             rollout_backend_registry: Optional mapping of backend names to backend classes.
                 Overrides entries in DEFAULT_ROLLOUT_BACKEND_REGISTRY.
             rollout_backend_kwargs: Optional extra kwargs for rollout backend constructor.
@@ -96,15 +92,10 @@ class Controller:
 
         self.model = self.task.model
 
-        # Initialize rollout backend
-        if isinstance(rollout_backend, str):
-            self.rollout_backend: RolloutBackend = self._make_rollout_backend(
-                rollout_backend,
-                backend_kwargs=self._rollout_backend_kwargs,
-            )
-        else:
-            # Pre-built backend instance (e.g. shared MJWarpRolloutBackend from BatchedControllers)
-            self.rollout_backend = rollout_backend
+        self.rollout_backend: RolloutBackend = self._make_rollout_backend(
+            rollout_backend,
+            backend_kwargs=self._rollout_backend_kwargs,
+        )
         self._last_policy_output = (
             np.zeros((self.optimizer_cfg.num_rollouts, POLICY_OUTPUT_DIM))
             if isinstance(self.rollout_backend, HierarchicalMJRolloutBackend)
@@ -455,8 +446,8 @@ class Controller:
         backend_kwargs: dict[str, Any] | None = None,
     ) -> RolloutBackend:
         """Instantiate a rollout backend from the merged backend registry."""
-        backend_cls = self._rollout_backend_registry.get(backend_name)
-        if backend_cls is None:
+        backend_factory = self._rollout_backend_registry.get(backend_name)
+        if backend_factory is None:
             raise ValueError(
                 f"Unknown rollout backend '{backend_name}'. "
                 "Provide it via rollout_backend_registry or choose a built-in backend."
@@ -494,11 +485,17 @@ class Controller:
                 )
             final_kwargs["policy_path"] = task_policy_path
 
-        return backend_cls(**final_kwargs)
+        backend = backend_factory(**final_kwargs)
+        if not isinstance(backend, RolloutBackend):
+            raise TypeError(
+                f"Rollout backend factory for '{backend_name}' must return a RolloutBackend, "
+                f"got {type(backend).__name__}."
+            )
+        return backend
 
 
 class BatchedControllers:
-    """Coordinates multiple controllers sharing a single RolloutBackend.
+    """Coordinates multiple controllers sharing a single BatchedRolloutBackend.
 
     This class manages batched rollouts across multiple controllers, executing
     a single GPU rollout for all controllers at each optimization iteration.
@@ -507,7 +504,7 @@ class BatchedControllers:
         # Create shared backend with num_threads per problem and num_problems
         num_rollouts = 64  # rollouts per controller
         num_problems = 3   # number of controllers
-        backend = RolloutBackend(model, num_threads=num_rollouts, num_problems=num_problems)
+        backend = BatchedRolloutBackend(model, num_threads=num_rollouts, num_problems=num_problems)
 
         # Create batched controller coordinator
         batched = BatchedControllers(config, task, optimizer, backend)
@@ -521,7 +518,7 @@ class BatchedControllers:
         controller_config: ControllerConfig,
         task: Task,
         optimizer: Optimizer,
-        rollout_backend: "MJWarpRolloutBackend",
+        rollout_backend: BatchedRolloutBackend,
     ) -> None:
         """Initialize the batched controllers.
 
@@ -529,7 +526,7 @@ class BatchedControllers:
             controller_config: Configuration for all controllers.
             task: Template task instance (new instances created from its class and model_path).
             optimizer: Template optimizer instance (deep copied for each controller).
-            rollout_backend: The shared WarpRolloutBackend instance. Should be initialized with
+            rollout_backend: Shared batched rollout backend instance. Should be initialized with
                 num_problems equal to len(controllers).
         """
         self.num_problems = rollout_backend.num_problems
@@ -537,11 +534,19 @@ class BatchedControllers:
         for _ in range(self.num_problems):
             new_task = task.__class__(model_path=task.model_path)
             new_task.config = copy.deepcopy(task.config)
+
+            # Construct controllers through normal backend-name resolution, but route
+            # the shared backend instance via a per-controller registry override.
+            shared_backend_name = "__shared_batched_backend__"
+            shared_backend_registry: dict[str, RolloutBackendEntry] = {
+                shared_backend_name: (lambda **_: rollout_backend)
+            }
             controller = Controller(
                 controller_config=controller_config,
                 task=new_task,
                 optimizer=copy.deepcopy(optimizer),
-                rollout_backend=rollout_backend,
+                rollout_backend=shared_backend_name,
+                rollout_backend_registry=shared_backend_registry,
             )
             self.controllers.append(controller)
         self.rollout_backend = rollout_backend
@@ -555,9 +560,9 @@ class BatchedControllers:
                 )
 
         # Validate num_problems matches number of controllers
-        if rollout_backend.num_problems != len(self.controllers):
+        if self.num_problems != len(self.controllers):
             raise ValueError(
-                f"RolloutBackend num_problems ({rollout_backend.num_problems}) does not match "
+                f"RolloutBackend num_problems ({self.num_problems}) does not match "
                 f"number of controllers ({len(self.controllers)}). "
                 f"Initialize backend with num_problems={len(self.controllers)}."
             )
@@ -656,8 +661,9 @@ class BatchedControllers:
         self.timer_rewards.print_stats()
         self.timer_update_iter.print_stats()
         self.timer_post_opt.print_stats()
-        if hasattr(self.rollout_backend, "print_timer_stats"):
-            self.rollout_backend.print_timer_stats()
+        backend_print_timer_stats = getattr(self.rollout_backend, "print_timer_stats", None)
+        if callable(backend_print_timer_stats):
+            backend_print_timer_stats()
 
     def reset_timers(self) -> None:
         """Reset all timers."""
@@ -666,8 +672,9 @@ class BatchedControllers:
         self.timer_rewards.reset()
         self.timer_update_iter.reset()
         self.timer_post_opt.reset()
-        if hasattr(self.rollout_backend, "reset_timers"):
-            self.rollout_backend.reset_timers()
+        backend_reset_timers = getattr(self.rollout_backend, "reset_timers", None)
+        if callable(backend_reset_timers):
+            backend_reset_timers()
 
     def update_states(self, state_msgs: list) -> None:
         """Update states for all controllers.
@@ -693,8 +700,7 @@ class BatchedControllers:
         else:
             pa_np = np.stack([pa for pa in previous_actions_list if pa is not None], axis=0)
             pa_broadcast = np.repeat(pa_np, self.rollout_backend.num_threads, axis=0)
-            import warp as wp  # noqa: PLC0415
-
+            import warp as wp  # pyright: ignore[reportMissingImports]  # noqa: PLC0415
             self._last_policy_output = wp.array(pa_broadcast, dtype=wp.float32, device=self.rollout_backend.device)
 
 

@@ -45,3 +45,10 @@ class RolloutBackend(ABC):
         Args:
             num_threads: New number of parallel threads.
         """
+
+
+class BatchedRolloutBackend(RolloutBackend, ABC):
+    """Rollout backend base class for multi-problem batched execution."""
+
+    num_problems: int
+    device: str
