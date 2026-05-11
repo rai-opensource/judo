@@ -33,11 +33,39 @@ def release_lock(lock_path: Path) -> None:
         pass
 
 
+def _request_with_retry(
+    method: str,
+    url: str,
+    *,
+    retries: int,
+    timeout_s: float,
+    backoff_time_s: float,
+    **request_kwargs,
+) -> requests.Response:
+    """Execute an HTTP request with `retries` retries."""
+    last_exception: Exception | None = None
+    for attempt in range(retries + 1):
+        try:
+            response = requests.request(method, url, timeout=timeout_s, **request_kwargs)
+            response.raise_for_status()
+            return response
+        except (requests.ConnectionError, requests.Timeout, requests.HTTPError) as request_exception:
+            last_exception = request_exception
+            if attempt < retries:
+                time.sleep(backoff_time_s)
+    if last_exception is not None:
+        raise last_exception
+    raise RuntimeError("Unexpected retry loop termination in _request_with_retry")
+
+
 def download_and_extract_meshes(
     extract_root: str,
     repo: str = "bdaiinstitute/judo",
     asset_name: str = "meshes.zip",
     tag: str | None = None,
+    retries: int = 3,
+    timeout_s: float = 30.0,
+    backoff_time_s: float = 1.0,
 ) -> None:
     """Downloads meshes.zip from the latest public GitHub release and extracts it."""
     extract_path = Path(extract_root).expanduser()
@@ -61,8 +89,14 @@ def download_and_extract_meshes(
         gh_token = os.environ.get("GITHUB_TOKEN")
         if gh_token:
             headers["Authorization"] = f"Bearer {gh_token}"
-        response = requests.get(api_url, headers=headers)
-        response.raise_for_status()
+        response = _request_with_retry(
+            "GET",
+            api_url,
+            retries=retries,
+            timeout_s=timeout_s,
+            backoff_time_s=backoff_time_s,
+            headers=headers,
+        )
         release_data = response.json()
 
         # get the download URL for meshes.zip
@@ -77,8 +111,14 @@ def download_and_extract_meshes(
         # download and extract
         zip_path = meshes_path.with_suffix(".zip")
         meshes_path.mkdir(parents=True, exist_ok=True)
-        with requests.get(asset_url, stream=True) as r:
-            r.raise_for_status()
+        with _request_with_retry(
+            "GET",
+            asset_url,
+            retries=retries,
+            timeout_s=timeout_s,
+            backoff_time_s=backoff_time_s,
+            stream=True,
+        ) as r:
             with open(zip_path, "wb") as f:
                 for chunk in r.iter_content(chunk_size=8192):
                     f.write(chunk)
