@@ -202,6 +202,7 @@ cmake = ">=3.15"
 eigen = ">=3.4"
 pybind11 = ">=2.11"
 onnxruntime-cpp = "1.19.*"  # pin to match starfish (1.22+ needs CXXABI_1.3.15 / GCC 14)
+llvm-openmp = { version = ">=22.1.4,<23", channel = "conda-forge" }
 
 [tool.pixi.target.linux-64.dependencies]
 libgomp = ">=13"  # OpenMP runtime for Linux
@@ -214,8 +215,8 @@ judo-rai = { path = ".", editable = true }
 
 [tool.pixi.tasks]
 # Build mujoco_extensions C++ module
-configure = { cmd = "cmake -B mujoco_extensions/build -S mujoco_extensions", description = "Configure mujoco_extensions cmake build" }
-build = { cmd = "cmake --build mujoco_extensions/build -j8", depends-on = ["configure"], description = "Build mujoco_extensions pybind modules" }
+configure = { cmd = "cmake -B mujoco_extensions/build/$PIXI_ENVIRONMENT_NAME -S mujoco_extensions", description = "Configure mujoco_extensions cmake build" }
+build = { cmd = "cmake --build mujoco_extensions/build/$PIXI_ENVIRONMENT_NAME -j8", depends-on = ["configure"], description = "Build mujoco_extensions pybind modules" }
 clean = { cmd = "rm -rf mujoco_extensions/build mujoco_extensions/policy_rollout/*.so", description = "Clean mujoco_extensions build artifacts" }
 upload-meshes = { cmd = "bash scripts/upload_meshes.sh", description = "Zip and upload meshes to latest GitHub release" }
 build-wheel = { cmd = "rm -rf dist && python -m build --wheel --outdir dist && bash scripts/repair_wheel.sh dist/*.whl wheelhouse \"\" $(python -c \"import sys; print(f'cp{sys.version_info[0]}{sys.version_info[1]}')\")", depends-on = ["clean", "build"], description = "Build manylinux wheel with auditwheel" }

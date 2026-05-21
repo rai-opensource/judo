@@ -53,14 +53,39 @@ execute_process(
 # Find ONNX Runtime from conda/pixi environment
 if(DEFINED ENV{CONDA_PREFIX})
   set(CONDA_PREFIX $ENV{CONDA_PREFIX})
-  file(GLOB ONNXRUNTIME_LIB_FILES "${CONDA_PREFIX}/lib/libonnxruntime.so*")
+  
+  # Check for both Linux (.so) and macOS (.dylib) extensions
+  file(GLOB ONNXRUNTIME_LIB_FILES 
+       "${CONDA_PREFIX}/lib/libonnxruntime.so*"
+       "${CONDA_PREFIX}/lib/libonnxruntime*.dylib") # Added for Mac
+       
   if(ONNXRUNTIME_LIB_FILES)
     list(GET ONNXRUNTIME_LIB_FILES 0 ONNXRUNTIME_LIB)
+    message(STATUS "Found ONNX Runtime: ${ONNXRUNTIME_LIB}")
   else()
     message(FATAL_ERROR "ONNX Runtime library not found in ${CONDA_PREFIX}/lib")
   endif()
-  # ONNX Runtime headers are in onnxruntime/core/session subdirectory
-  set(ONNXRUNTIME_INCLUDE "${CONDA_PREFIX}/include/onnxruntime/core/session")
+
+  # Resolve include directory across possible package layouts.
+  # Common locations include:
+  # - ${CONDA_PREFIX}/include
+  # - ${CONDA_PREFIX}/include/onnxruntime
+  # - ${CONDA_PREFIX}/include/onnxruntime/core/session
+  find_path(ONNXRUNTIME_INCLUDE
+    NAMES onnxruntime_cxx_api.h
+    HINTS
+      "${CONDA_PREFIX}/include"
+      "${CONDA_PREFIX}/include/onnxruntime"
+    PATH_SUFFIXES
+      ""
+      "onnxruntime"
+      "onnxruntime/core/session"
+  )
+
+  if(NOT ONNXRUNTIME_INCLUDE)
+    message(FATAL_ERROR
+      "ONNX Runtime headers not found. Expected onnxruntime_cxx_api.h under ${CONDA_PREFIX}/include")
+  endif()
 else()
   message(FATAL_ERROR "CONDA_PREFIX not set. Please run within pixi environment.")
 endif()
@@ -110,10 +135,16 @@ pybind11_add_module(policy_rollout_pybind
   policy_rollout/pybind/pybind.cpp
   policy_rollout/pybind/policy_rollout.cpp
 )
-target_compile_options(policy_rollout_pybind PRIVATE
-  -fopenmp
-  -mtune=native
-)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+  target_compile_options(policy_rollout_pybind PRIVATE
+    -mtune=native
+  )
+else()
+  target_compile_options(policy_rollout_pybind PRIVATE
+    -fopenmp
+    -mtune=native
+  )
+endif()
 target_link_libraries(policy_rollout_pybind PRIVATE
   Eigen3::Eigen
   OpenMP::OpenMP_CXX
