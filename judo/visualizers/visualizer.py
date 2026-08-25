@@ -10,11 +10,11 @@ from PIL import Image
 from viser import GuiFolderHandle, GuiImageHandle, GuiInputHandle, IcosphereHandle, MeshHandle
 
 from judo import PACKAGE_ROOT
-from judo.app.utils import register_optimizers_from_cfg, register_tasks_from_cfg
 from judo.config import set_config_overrides
 from judo.controller import ControllerConfig
 from judo.gui import create_gui_elements
 from judo.optimizers import get_registered_optimizers
+from judo.registration import register_optimizers_from_cfg, register_tasks_from_cfg
 from judo.tasks import TaskRegistration, get_registered_tasks
 from judo.visualizers.model import ViserMjModel
 
@@ -332,17 +332,30 @@ class Visualizer:
             with self.task_lock:
                 self.set_task(self.task_name, self.optimizer_name)
 
+    @staticmethod
+    def _is_removed(handle: object) -> bool:
+        """Return True if a viser handle has already been removed.
+
+        Different viser handle types track removal differently: GUI/scene handles expose
+        ``_impl.removed`` while tab handles expose ``_removed``. This guards against
+        double-removal warnings (e.g. removing a tab group already removes its child tabs).
+        """
+        if getattr(handle, "_removed", False):
+            return True
+        impl = getattr(handle, "_impl", None)
+        return bool(getattr(impl, "removed", False))
+
     def remove_handles(self, handles: list[ElementType] | ElementType) -> None:
         """Remove GUI handles from the visualization node."""
         if isinstance(handles, ElementType):
-            if not handles._impl.removed:
+            if not self._is_removed(handles):
                 handles.remove()
         else:
             assert isinstance(handles, list), "handles must be a list or a single handle."
             for handle in handles:
                 if isinstance(handle, list):
                     self.remove_handles(handle)
-                elif not handle._impl.removed:
+                elif not self._is_removed(handle):
                     handle.remove()
 
     def _remove_gui_elements(self) -> None:
@@ -351,7 +364,7 @@ class Visualizer:
             if isinstance(v, list):
                 for handle in v:
                     self.remove_handles(handle)
-            else:
+            elif not self._is_removed(v):
                 v.remove()
         self.viser_model.remove()
 

@@ -8,7 +8,7 @@ from dora_utils.node import DoraNode, on_event
 from omegaconf import DictConfig
 from viser import GuiFolderHandle, GuiImageHandle, GuiInputHandle, IcosphereHandle, MeshHandle
 
-from judo.app.structs import RenderPose
+from judo.structs import RenderPose
 from judo.tasks import TaskRegistration
 from judo.visualizers.visualizer import Visualizer
 

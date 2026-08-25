@@ -29,9 +29,9 @@ jobs:
         uses: actions/cache@v5
         with:
           path: |
-            mujoco_extensions/build
-            mujoco_extensions/policy_rollout/*.so
-          key: mujoco-ext-gpu-${{ hashFiles('pixi.lock', 'mujoco_extensions/**/*.cpp', 'mujoco_extensions/**/*.h', 'mujoco_extensions/**/CMakeLists.txt') }}
+            judo/mujoco_extensions/build
+            judo/mujoco_extensions/policy_rollout/*.so
+          key: mujoco-ext-gpu-${{ hashFiles('pixi.lock', 'judo/mujoco_extensions/**/*.cpp', 'judo/mujoco_extensions/**/*.h', 'judo/mujoco_extensions/**/CMakeLists.txt') }}
 
       - name: Build mujoco_extensions (cache miss)
         if: steps.ext-cache.outputs.cache-hit != 'true'

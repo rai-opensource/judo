@@ -9,11 +9,10 @@ from mujoco import mj_forward
 from omegaconf import DictConfig
 
 from judo.simulation.mj_simulation import MJSimulation
-from judo.tasks import get_task_registration
 from judo.tasks.spot.spot_constants import DEFAULT_SPOT_ROLLOUT_CUTOFF_TIME, POLICY_OUTPUT_DIM
 
 try:
-    from mujoco_extensions.policy_rollout import create_systems_vector, threaded_rollout  # type: ignore
+    from judo.mujoco_extensions.policy_rollout import create_systems_vector, threaded_rollout
 except ImportError as e:
     raise ImportError(
         "mujoco_extensions is not built. Spot locomotion tasks require the C++ extension.\n"
@@ -37,26 +36,22 @@ class HierarchicalMJSimulation(MJSimulation):
         self,
         init_task: str = "spot_base",
         task_registration_cfg: DictConfig | None = None,
+        locomotion_policy_path: str | Path | None = None,
     ) -> None:
         """Initialize the hierarchical simulation.
 
         Args:
             init_task: Name of the task to initialize.
             task_registration_cfg: Optional task registration configuration.
+            locomotion_policy_path: Path to the ONNX low-level policy used by hierarchical tasks.
+                Must be provided for tasks that use a locomotion policy; it is supplied by the
+                caller (e.g., the app resolves it from the task registry) rather than looked up
+                here, keeping the simulation decoupled from the task registry.
         """
-        super().__init__(init_task=init_task, task_registration_cfg=task_registration_cfg)
-
+        self._locomotion_policy_path = locomotion_policy_path
         self._systems = None
         self._last_policy_output = np.zeros(POLICY_OUTPUT_DIM)
-
-        # Initialize C++ systems if the task uses a hierarchical policy layer.
-        if self.task.uses_locomotion_policy:
-            policy_path = get_task_registration(self.task.name).locomotion_policy_path
-            if policy_path is None:
-                raise ValueError(
-                    f"Task '{self.task.name}' uses locomotion policy but no locomotion_policy_path is registered."
-                )
-            self._init_cpp_systems(policy_path)
+        super().__init__(init_task=init_task, task_registration_cfg=task_registration_cfg)
 
     def _init_cpp_systems(self, policy_path: str | Path) -> None:
         """Initialize the C++ systems vector for threaded rollout.
@@ -105,6 +100,7 @@ class HierarchicalMJSimulation(MJSimulation):
         # states: (num_threads, nq+nv)
         # commands: (num_threads, num_timesteps, cmd_dim)
         # last_outputs: (num_threads, POLICY_OUTPUT_DIM)
+        assert self._systems is not None  # guaranteed by the caller's `_systems is not None` check
         states = np.array([state], dtype=np.float64)
         commands = np.array([[command]], dtype=np.float64)
         last_outputs = np.array([self._last_policy_output], dtype=np.float64)
@@ -149,12 +145,11 @@ class HierarchicalMJSimulation(MJSimulation):
 
         # Reinitialize systems based on the new task's policy layer.
         if self.task.uses_locomotion_policy:
-            policy_path = get_task_registration(self.task.name).locomotion_policy_path
-            if policy_path is None:
+            if self._locomotion_policy_path is None:
                 raise ValueError(
-                    f"Task '{self.task.name}' uses locomotion policy but no locomotion_policy_path is registered."
+                    f"Task '{self.task.name}' uses locomotion policy but no locomotion_policy_path was provided."
                 )
-            self._init_cpp_systems(policy_path)
+            self._init_cpp_systems(self._locomotion_policy_path)
             self._last_policy_output = np.zeros(POLICY_OUTPUT_DIM)
         else:
             raise ValueError(

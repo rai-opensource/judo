@@ -43,7 +43,7 @@ class HierarchicalMJRolloutBackend(RolloutBackend):
     def _setup_mujoco_extensions(self, model: MjModel, policy_path: str | Path, num_threads: int) -> None:
         """Setup the mujoco_extensions C++ rollout backend with ONNX low-level policy."""
         try:
-            from mujoco_extensions.policy_rollout import create_systems_vector, threaded_rollout  # type: ignore  # noqa: PLC0415, I001
+            from judo.mujoco_extensions.policy_rollout import create_systems_vector, threaded_rollout  # noqa: PLC0415, I001
         except ImportError as e:
             raise ImportError("mujoco_extensions is required. Build with: pixi run build") from e
 

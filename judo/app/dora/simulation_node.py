@@ -8,9 +8,9 @@ from dora_utils.dataclasses import from_arrow, to_arrow
 from dora_utils.node import DoraNode, on_event
 from omegaconf import DictConfig
 
-from judo.app.structs import SplineData
 from judo.simulation import DEFAULT_SIMULATION_BACKEND_REGISTRY
 from judo.simulation.base import Simulation
+from judo.structs import SplineData
 from judo.tasks import get_registered_tasks
 
 
@@ -56,7 +56,12 @@ class SimulationNode(DoraNode):
             raise ValueError(f"Task {task_name} not found in task registry.")
 
         sim_backend_cls = self._resolve_backend(task_entry.simulation_backend)
-        self.sim = sim_backend_cls(init_task=task_name, task_registration_cfg=self._task_registration_cfg)
+        sim_kwargs: dict = {"init_task": task_name, "task_registration_cfg": self._task_registration_cfg}
+        # The hierarchical backend needs the low-level policy path passed explicitly (the
+        # Simulation classes are decoupled from the task registry).
+        if task_entry.simulation_backend == "mujoco_hierarchical":
+            sim_kwargs["locomotion_policy_path"] = task_entry.locomotion_policy_path
+        self.sim = sim_backend_cls(**sim_kwargs)
 
     @on_event("INPUT", "task")
     def update_task(self, event: dict) -> None:

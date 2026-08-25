@@ -58,7 +58,7 @@ def setup_mpc(
 
     for _ in range(num_parallel):
         if use_spot:
-            sim = HierarchicalMJSimulation(init_task=json_configs["task"])
+            sim = HierarchicalMJSimulation(init_task=json_configs["task"], locomotion_policy_path=policy_path)
         else:
             sim = MJSimulation(init_task=json_configs["task"])
         sim.task.config = copy.deepcopy(task.config)

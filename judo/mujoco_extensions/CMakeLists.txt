@@ -121,8 +121,8 @@ target_link_libraries(policy_rollout_pybind PRIVATE
   ${MUJOCO_LIB}
 )
 set_target_properties(policy_rollout_pybind PROPERTIES
-  BUILD_RPATH "$ORIGIN/../../mujoco"
-  INSTALL_RPATH "$ORIGIN/../../mujoco"
+  BUILD_RPATH "$ORIGIN/../../../mujoco"
+  INSTALL_RPATH "$ORIGIN/../../../mujoco"
   BUILD_RPATH_USE_ORIGIN TRUE
   LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/policy_rollout"
 )

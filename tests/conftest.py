@@ -8,6 +8,8 @@ from typing import Callable, Generator
 import numpy as np
 import pytest
 
+import judo.app  # noqa: F401  # registers judo's built-in tasks in the task registry
+
 
 @pytest.fixture(scope="session")
 def temp_np_seed() -> Callable[[int], contextlib._GeneratorContextManager[None]]:

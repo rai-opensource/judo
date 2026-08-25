@@ -43,7 +43,8 @@ def test_simulation_data_step(temp_np_seed: Callable) -> None:
 
 def test_spot_simulation_init() -> None:
     """Test HierarchicalMJSimulation initializes with a Spot task and C++ systems."""
-    sim = HierarchicalMJSimulation(init_task="spot_base")
+    policy_path = get_task_registration("spot_base").locomotion_policy_path
+    sim = HierarchicalMJSimulation(init_task="spot_base", locomotion_policy_path=policy_path)
     assert sim._systems is not None
     assert sim.task.uses_locomotion_policy
     assert get_task_registration(sim.task.name).locomotion_policy_path is not None
@@ -51,7 +52,8 @@ def test_spot_simulation_init() -> None:
 
 def test_spot_simulation_step() -> None:
     """Test HierarchicalMJSimulation steps correctly with Spot locomotion policy."""
-    sim = HierarchicalMJSimulation(init_task="spot_base")
+    policy_path = get_task_registration("spot_base").locomotion_policy_path
+    sim = HierarchicalMJSimulation(init_task="spot_base", locomotion_policy_path=policy_path)
     qpos_before = sim.task.data.qpos.copy()
     command = np.zeros(sim.task.nu)
     sim.step(command)

@@ -188,7 +188,7 @@ outputs/
 MUJOCO_LOG.TXT
 
 # bundled shared libraries (auditwheel handles bundling into wheel)
-mujoco_extensions/policy_rollout/libonnxruntime*
+judo/mujoco_extensions/policy_rollout/libonnxruntime*
 wheelhouse/
 
 # assets

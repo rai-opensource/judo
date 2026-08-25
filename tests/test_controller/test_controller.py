@@ -6,7 +6,7 @@ import numpy as np
 
 from judo.controller import Controller, ControllerConfig, make_controller
 from judo.optimizers import Optimizer, OptimizerConfig, get_registered_optimizers
-from judo.tasks import CylinderPush
+from judo.tasks.cylinder_push import CylinderPush
 
 # ##### #
 # MOCKS #

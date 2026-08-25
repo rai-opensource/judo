@@ -164,7 +164,7 @@ jobs:
         run: |
           source /tmp/test-venv/bin/activate
           python -c "
-          from mujoco_extensions.policy_rollout import create_systems_vector, threaded_rollout
+          from judo.mujoco_extensions.policy_rollout import create_systems_vector, threaded_rollout
           print('mujoco_extensions OK')
           from judo.tasks.spot.spot_base import SpotBase, XML_PATH
           from judo.tasks.spot.spot_constants import SPOT_LOCOMOTION_POLICY_PATH

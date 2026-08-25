@@ -4,8 +4,8 @@ from judo.controller.controller import (
     BatchedControllers,
     Controller,
     ControllerConfig,
-    make_controller,
 )
+from judo.controller.factory import make_controller
 from judo.controller.overrides import (
     set_default_caltech_leap_cube_overrides,
     set_default_cartpole_overrides,

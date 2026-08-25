@@ -71,6 +71,18 @@ pixi run clean
 pixi run build
 ```
 
+If you change the `policy_rollout_pybind` C++ API (signatures in
+`judo/mujoco_extensions/policy_rollout/pybind/`), regenerate its type stubs so
+type checkers stay in sync (this builds the module first):
+```bash
+pixi run stubgen-extension
+```
+The generated `.pyi` files live next to the compiled module in
+`judo/mujoco_extensions/policy_rollout/policy_rollout_pybind/` and are committed
+to the repo. `pybind11-stubgen` occasionally emits raw C++ types (e.g.
+`SystemClass::System`, `Ort::Session`) as invalid `...` annotations — review the
+diff and replace those with the proper Python types before committing.
+
 ## 2. Run the `judo` app!
 To start the simulator, from within the pixi shell, you can simply run:
 ```bash

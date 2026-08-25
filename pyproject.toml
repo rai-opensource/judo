@@ -56,18 +56,18 @@ run_mpc = "run_mpc.cli:main"
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["judo", "mujoco_extensions", "run_mpc"]
-artifacts = ["mujoco_extensions/**/policy_rollout_pybind*.so", "judo/app/asset/*"]
+packages = ["judo", "run_mpc"]
+artifacts = ["judo/mujoco_extensions/**/policy_rollout_pybind*.so", "judo/app/asset/*"]
 exclude = [
     "judo/models/meshes",
-    "mujoco_extensions/build",
-    "mujoco_extensions/system",
-    "mujoco_extensions/onnx_interface",
-    "mujoco_extensions/example",
-    "mujoco_extensions/test",
-    "mujoco_extensions/CMakeLists.txt",
-    "mujoco_extensions/policy_rollout/pybind",
-    "mujoco_extensions/policy_rollout/test",
+    "judo/mujoco_extensions/build",
+    "judo/mujoco_extensions/system",
+    "judo/mujoco_extensions/onnx_interface",
+    "judo/mujoco_extensions/example",
+    "judo/mujoco_extensions/test",
+    "judo/mujoco_extensions/CMakeLists.txt",
+    "judo/mujoco_extensions/policy_rollout/pybind",
+    "judo/mujoco_extensions/policy_rollout/test",
 ]
 
 [project.optional-dependencies]
@@ -114,6 +114,9 @@ stubPath = "typings"
 
 reportMissingTypeStubs = false
 reportPrivateImportUsage = false
+# The mujoco_extensions C++ module is type-checked via committed .pyi stubs; its compiled
+# .so is built separately (pixi run build) and is absent in lint-only environments.
+reportMissingModuleSource = false
 
 
 pythonVersion = "3.13"
@@ -150,7 +153,7 @@ exclude=[
     "site-packages",
     "venv",
     "docs",
-    "mujoco_extensions",
+    "judo/mujoco_extensions",
 ]
 
 [tool.ruff.lint]
@@ -214,9 +217,10 @@ judo-rai = { path = ".", editable = true }
 
 [tool.pixi.tasks]
 # Build mujoco_extensions C++ module
-configure = { cmd = "cmake -B mujoco_extensions/build -S mujoco_extensions", description = "Configure mujoco_extensions cmake build" }
-build = { cmd = "cmake --build mujoco_extensions/build -j8", depends-on = ["configure"], description = "Build mujoco_extensions pybind modules" }
-clean = { cmd = "rm -rf mujoco_extensions/build mujoco_extensions/policy_rollout/*.so", description = "Clean mujoco_extensions build artifacts" }
+configure = { cmd = "cmake -B judo/mujoco_extensions/build -S judo/mujoco_extensions", description = "Configure mujoco_extensions cmake build" }
+build = { cmd = "cmake --build judo/mujoco_extensions/build -j8", depends-on = ["configure"], description = "Build mujoco_extensions pybind modules" }
+clean = { cmd = "rm -rf judo/mujoco_extensions/build judo/mujoco_extensions/policy_rollout/*.so", description = "Clean mujoco_extensions build artifacts" }
+stubgen-extension = { cmd = "python -m pybind11_stubgen policy_rollout_pybind -o .", cwd = "judo/mujoco_extensions/policy_rollout", depends-on = ["build"], description = "Regenerate .pyi type stubs for the policy_rollout_pybind C++ module (review output for C++ leaks afterwards)" }
 upload-meshes = { cmd = "bash scripts/upload_meshes.sh", description = "Zip and upload meshes to latest GitHub release" }
 build-wheel = { cmd = "rm -rf dist && python -m build --wheel --outdir dist && bash scripts/repair_wheel.sh dist/*.whl wheelhouse \"\" $(python -c \"import sys; print(f'cp{sys.version_info[0]}{sys.version_info[1]}')\")", depends-on = ["clean", "build"], description = "Build manylinux wheel with auditwheel" }
 run_mpc = { cmd = "run_mpc", description = "Run batched MPC (pass args after --)" }
@@ -224,6 +228,9 @@ run_mpc = { cmd = "run_mpc", description = "Run batched MPC (pass args after --)
 [tool.pixi.activation.env]
 LD_LIBRARY_PATH = "$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
 PYTHONNOUSERSITE = "1"
+
+[tool.pixi.feature.dev.dependencies]
+nodejs = ">=18"  # pyright needs a modern Node.js (system node may be too old to parse its bundled JS)
 
 [tool.pixi.feature.py310.dependencies]
 python = "3.10.*"

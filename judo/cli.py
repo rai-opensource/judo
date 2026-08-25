@@ -119,7 +119,11 @@ def main_app(cfg: DictConfig) -> None:
     """Main function to run judo via a hydra configuration yaml file."""
     try:
         run(cfg)
-    except (KeyboardInterrupt, SystemExit):
+    except (KeyboardInterrupt, SystemExit, subprocess.CalledProcessError):
+        # On shutdown (e.g. Ctrl+C), dora_utils' cleanup (run.py) calls `dora destroy` with
+        # check=True; if the dataflow is already being torn down it exits non-zero and raises
+        # CalledProcessError. Our own _force_cleanup() already handles teardown, so all of these
+        # are expected shutdown paths rather than real failures.
         _force_cleanup()
 
 
@@ -144,7 +148,7 @@ def _warm_caches() -> None:
 def _require_mujoco_extensions() -> None:
     """Fail fast if mujoco_extensions is unavailable in the current environment."""
     try:
-        import mujoco_extensions  # noqa: F401, PLC0415
+        import judo.mujoco_extensions  # noqa: F401, PLC0415
     except Exception as e:  # pragma: no cover - environment dependent
         raise RuntimeError(
             "mujoco_extensions is required but could not be imported. Build it with: pixi run build"

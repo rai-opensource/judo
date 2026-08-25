@@ -9,11 +9,11 @@ from typing import Any
 import numpy as np
 from tqdm import tqdm
 
-from judo.app.structs import RenderPose
 from judo.controller import BatchedControllers as JudoBatchedController
 from judo.controller import Controller as JudoController
 from judo.simulation.hierarchical_mj_simulation import HierarchicalMJSimulation
 from judo.simulation.mj_simulation import MJSimulation
+from judo.structs import RenderPose
 from judo.visualizers.visualizer import Visualizer
 from run_mpc.mpc_config import MPCTimers, PublicMPCConfig, SizeData
 

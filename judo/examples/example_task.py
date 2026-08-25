@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from judo.tasks import CylinderPush, CylinderPushConfig
+from judo.tasks.cylinder_push import CylinderPush, CylinderPushConfig
 
 
 @dataclass

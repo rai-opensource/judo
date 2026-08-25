@@ -4,25 +4,6 @@ from dataclasses import dataclass
 from typing import Dict, Type
 
 from judo.tasks.base import Task, TaskConfig
-from judo.tasks.caltech_leap_cube import CaltechLeapCube, CaltechLeapCubeConfig
-from judo.tasks.cartpole import Cartpole, CartpoleConfig
-from judo.tasks.cylinder_push import CylinderPush, CylinderPushConfig
-from judo.tasks.fr3_pick import FR3Pick, FR3PickConfig
-from judo.tasks.leap_cube import LeapCube, LeapCubeConfig
-from judo.tasks.leap_cube_down import LeapCubeDown, LeapCubeDownConfig
-from judo.tasks.spot import (
-    SpotBase,
-    SpotBaseConfig,
-    SpotBoxPush,
-    SpotBoxPushConfig,
-    SpotNavigate,
-    SpotNavigateConfig,
-    SpotTireRoll,
-    SpotTireRollConfig,
-    SpotTireUpright,
-    SpotTireUprightConfig,
-)
-from judo.tasks.spot.spot_constants import SPOT_LOCOMOTION_POLICY_PATH
 
 
 @dataclass(frozen=True)
@@ -36,49 +17,11 @@ class TaskRegistration:
     locomotion_policy_path: str | None = None
 
 
-_registered_tasks: Dict[str, TaskRegistration] = {
-    CylinderPush.name: TaskRegistration(CylinderPush, CylinderPushConfig),
-    Cartpole.name: TaskRegistration(Cartpole, CartpoleConfig),
-    FR3Pick.name: TaskRegistration(FR3Pick, FR3PickConfig),
-    LeapCube.name: TaskRegistration(LeapCube, LeapCubeConfig),
-    LeapCubeDown.name: TaskRegistration(LeapCubeDown, LeapCubeDownConfig),
-    CaltechLeapCube.name: TaskRegistration(CaltechLeapCube, CaltechLeapCubeConfig),
-    SpotBase.name: TaskRegistration(
-        SpotBase,
-        SpotBaseConfig,
-        rollout_backend="mujoco_hierarchical",
-        simulation_backend="mujoco_hierarchical",
-        locomotion_policy_path=str(SPOT_LOCOMOTION_POLICY_PATH),
-    ),
-    SpotBoxPush.name: TaskRegistration(
-        SpotBoxPush,
-        SpotBoxPushConfig,
-        rollout_backend="mujoco_hierarchical",
-        simulation_backend="mujoco_hierarchical",
-        locomotion_policy_path=str(SPOT_LOCOMOTION_POLICY_PATH),
-    ),
-    SpotNavigate.name: TaskRegistration(
-        SpotNavigate,
-        SpotNavigateConfig,
-        rollout_backend="mujoco_hierarchical",
-        simulation_backend="mujoco_hierarchical",
-        locomotion_policy_path=str(SPOT_LOCOMOTION_POLICY_PATH),
-    ),
-    SpotTireRoll.name: TaskRegistration(
-        SpotTireRoll,
-        SpotTireRollConfig,
-        rollout_backend="mujoco_hierarchical",
-        simulation_backend="mujoco_hierarchical",
-        locomotion_policy_path=str(SPOT_LOCOMOTION_POLICY_PATH),
-    ),
-    SpotTireUpright.name: TaskRegistration(
-        SpotTireUpright,
-        SpotTireUprightConfig,
-        rollout_backend="mujoco_hierarchical",
-        simulation_backend="mujoco_hierarchical",
-        locomotion_policy_path=str(SPOT_LOCOMOTION_POLICY_PATH),
-    ),
-}
+# The registry is intentionally empty by default. Concrete tasks (and their backends /
+# locomotion policies) are registered at the application level so that this library can be
+# consumed by third-party packages without pulling in judo's built-in task set. Judo's own
+# default tasks are registered in ``judo.app`` (see ``judo.app.register_default_tasks``).
+_registered_tasks: Dict[str, TaskRegistration] = {}
 
 
 def get_registered_tasks() -> Dict[str, TaskRegistration]:
@@ -119,26 +62,4 @@ __all__ = [
     "TaskRegistration",
     "Task",
     "TaskConfig",
-    "CaltechLeapCube",
-    "CaltechLeapCubeConfig",
-    "Cartpole",
-    "CartpoleConfig",
-    "CylinderPush",
-    "CylinderPushConfig",
-    "FR3Pick",
-    "FR3PickConfig",
-    "LeapCube",
-    "LeapCubeConfig",
-    "LeapCubeDown",
-    "LeapCubeDownConfig",
-    "SpotBase",
-    "SpotBaseConfig",
-    "SpotBoxPush",
-    "SpotBoxPushConfig",
-    "SpotNavigate",
-    "SpotNavigateConfig",
-    "SpotTireRoll",
-    "SpotTireRollConfig",
-    "SpotTireUpright",
-    "SpotTireUprightConfig",
 ]

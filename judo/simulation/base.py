@@ -5,8 +5,8 @@ from abc import ABC, abstractmethod
 import numpy as np
 from omegaconf import DictConfig
 
-from judo.app.structs import MujocoState, RenderPose
-from judo.app.utils import register_tasks_from_cfg
+from judo.registration import register_tasks_from_cfg
+from judo.structs import MujocoState, RenderPose
 from judo.tasks import get_registered_tasks
 from judo.tasks.base import Task
 

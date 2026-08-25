@@ -7,15 +7,13 @@ from typing import Any, Callable, Literal
 
 import numpy as np
 from mujoco import MjData
-from omegaconf import DictConfig
 from scipy.interpolate import interp1d
 
-from judo.app.structs import MujocoState, SplineData
-from judo.app.utils import register_optimizers_from_cfg, register_tasks_from_cfg
 from judo.config import OverridableConfig
 from judo.gui import slider
-from judo.optimizers import Optimizer, OptimizerConfig, get_registered_optimizers
-from judo.tasks import Task, TaskConfig, get_registered_tasks, get_task_registration
+from judo.optimizers import Optimizer, OptimizerConfig
+from judo.structs import MujocoState, SplineData
+from judo.tasks import Task, TaskConfig
 from judo.tasks.spot.spot_constants import POLICY_OUTPUT_DIM
 from judo.utils.hierarchical_mj_rollout_backend import HierarchicalMJRolloutBackend
 from judo.utils.mj_rollout_backend import MJRolloutBackend
@@ -75,10 +73,10 @@ class Controller:
             rollout_backend_registry: Optional mapping of backend names to backend classes.
                 Overrides entries in DEFAULT_ROLLOUT_BACKEND_REGISTRY.
             rollout_backend_kwargs: Optional extra kwargs for rollout backend constructor.
-                For "mujoco_hierarchical" backend, 'physics_substeps' and 'policy_path' cannot be
-                specified here—they are sourced from the task and task registry respectively.
-                Raises ValueError if either is provided. To use different values, create or
-                update a task registry entry.
+                For "mujoco_hierarchical" backend, 'physics_substeps' cannot be specified here—it
+                is sourced from the task (raises ValueError if provided). 'policy_path' is required
+                and must be supplied here by the caller (e.g., the app resolves it from the task
+                registry's locomotion_policy_path).
         """
         self._controller_cfg = controller_config
         self.task = task
@@ -86,9 +84,6 @@ class Controller:
         self._rollout_backend_registry = dict(DEFAULT_ROLLOUT_BACKEND_REGISTRY)
         self._rollout_backend_registry.update(rollout_backend_registry or {})
         self._rollout_backend_kwargs = rollout_backend_kwargs or {}
-
-        self.available_optimizers = get_registered_optimizers()
-        self.available_tasks = get_registered_tasks()
 
         self.model = self.task.model
 
@@ -470,23 +465,14 @@ class Controller:
                 )
             final_kwargs["physics_substeps"] = self.task.physics_substeps
 
-            # policy_path is currently registry-owned for hierarchical backend wiring.
-            # This keeps policy/model assumptions centralized until hierarchical ONNX
-            # integration is generalized on the C++ side.
-            if "policy_path" in final_kwargs:
-                raise ValueError(
-                    f"Cannot specify 'policy_path' in rollout_backend_kwargs. "
-                    f"It must be defined in the task registry entry for '{self.task.name}'. "
-                    f"To use a different policy path, create or update a task registry entry with the desired path."
-                )
-
-            task_policy_path = get_task_registration(self.task.name).locomotion_policy_path
-            if task_policy_path is None:
+            # policy_path must be supplied explicitly by the caller (e.g., the app resolves it
+            # from the task registry's locomotion_policy_path and passes it via rollout_backend_kwargs).
+            if final_kwargs.get("policy_path") is None:
                 raise ValueError(
                     f"Backend '{backend_name}' requires 'policy_path'. "
-                    f"Task '{self.task.name}' must have a locomotion_policy_path registered in the task registry."
+                    f"Provide it via rollout_backend_kwargs for task '{self.task.name}' "
+                    f"(the app resolves it from the task registry's locomotion_policy_path)."
                 )
-            final_kwargs["policy_path"] = task_policy_path
 
         backend = backend_factory(**final_kwargs)
         if not isinstance(backend, RolloutBackend):
@@ -727,66 +713,4 @@ def make_spline(times: np.ndarray, controls: np.ndarray, spline_order: str) -> i
         copy=False,
         fill_value=fill_value,  # interp1d is incorrectly typed # type: ignore
         bounds_error=False,
-    )
-
-
-def make_controller(
-    init_task: str,
-    init_optimizer: str,
-    task_registration_cfg: DictConfig | None = None,
-    optimizer_registration_cfg: DictConfig | None = None,
-    controller_cls: type[Controller] | None = None,
-    **controller_kwargs: Any,
-) -> Controller:
-    """Make a controller.
-
-    Args:
-        init_task: The task name to use.
-        init_optimizer: The optimizer name to use.
-        task_registration_cfg: Optional task registration overrides keyed by task name.
-            Each entry must contain `task` and `config` import paths, and may also define
-            `rollout_backend`, `simulation_backend`, and `locomotion_policy_path`.
-            See register_tasks_from_cfg for the exact supported schema.
-        optimizer_registration_cfg: Optional optimizer registration overrides keyed by
-            optimizer name. Each entry must contain `optimizer` and `config` import paths.
-            See register_optimizers_from_cfg for the exact supported schema.
-        controller_cls: Optional controller class to instantiate instead of Controller.
-        **controller_kwargs: Additional keyword arguments forwarded to the controller
-            constructor.
-
-    Returns:
-        The created Controller instance.
-    """
-    available_optimizers = get_registered_optimizers()
-    available_tasks = get_registered_tasks()
-    if task_registration_cfg is not None:
-        register_tasks_from_cfg(task_registration_cfg)
-    if optimizer_registration_cfg is not None:
-        register_optimizers_from_cfg(optimizer_registration_cfg)
-
-    task_entry = available_tasks.get(init_task)
-    optimizer_entry = available_optimizers.get(init_optimizer)
-
-    assert task_entry is not None, f"Task {init_task} not found in task registry."
-    assert optimizer_entry is not None, f"Optimizer {init_optimizer} not found in optimizer registry."
-    task_registration = get_task_registration(init_task)
-
-    # instantiate the task/optimizer/controller
-    task = task_entry.task_type()
-
-    optimizer_cls, optimizer_config_cls = optimizer_entry
-    optimizer_cfg = optimizer_config_cls()
-    optimizer_cfg.set_override(init_task)
-    optimizer = optimizer_cls(optimizer_cfg, task.nu)
-
-    controller_cfg = ControllerConfig()
-    controller_cfg.set_override(init_task)
-
-    cls = controller_cls or Controller
-    return cls(
-        controller_config=controller_cfg,
-        task=task,
-        optimizer=optimizer,
-        rollout_backend=task_registration.rollout_backend,
-        **controller_kwargs,
     )

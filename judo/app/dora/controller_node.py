@@ -9,8 +9,10 @@ from dora_utils.dataclasses import from_event, to_arrow
 from dora_utils.node import DoraNode, on_event
 from omegaconf import DictConfig
 
-from judo.app.structs import MujocoState
 from judo.controller import Controller, make_controller
+from judo.optimizers import get_registered_optimizers
+from judo.structs import MujocoState
+from judo.tasks import get_registered_tasks
 
 
 class ControllerNode(DoraNode):
@@ -44,6 +46,7 @@ class ControllerNode(DoraNode):
         self._optimizer_registration_cfg = optimizer_registration_cfg
         self.controller = self._build_controller(init_task, init_optimizer)
         self._paused = False
+        self._running = True
         self.write_controls()
         self.lock = Lock()
 
@@ -61,7 +64,7 @@ class ControllerNode(DoraNode):
 
         Returns "cem" as a safe default if no registry entry matches the active optimizer instance.
         """
-        for name, (cls, _) in self.controller.available_optimizers.items():
+        for name, (cls, _) in get_registered_optimizers().items():
             if isinstance(self.controller.optimizer, cls):
                 return name
         return "cem"
@@ -70,7 +73,7 @@ class ControllerNode(DoraNode):
     def update_task(self, event: dict) -> None:
         """Updates the task type."""
         new_task = event["value"].to_numpy(zero_copy_only=False)[0]
-        task_entry = self.controller.available_tasks.get(new_task)
+        task_entry = get_registered_tasks().get(new_task)
         if task_entry is None:
             raise ValueError(f"Task {new_task} not found in task registry.")
 
@@ -94,7 +97,7 @@ class ControllerNode(DoraNode):
     def update_optimizer(self, event: dict) -> None:
         """Updates the optimizer type."""
         new_optimizer = event["value"].to_numpy(zero_copy_only=False)[0]
-        optimizer_entry = self.controller.available_optimizers.get(new_optimizer)
+        optimizer_entry = get_registered_optimizers().get(new_optimizer)
         if optimizer_entry is not None:
             optimizer_cls, optimizer_config_cls = optimizer_entry
             optimizer_config = optimizer_config_cls()
@@ -120,11 +123,25 @@ class ControllerNode(DoraNode):
         """Callback to update optimizer task config on receiving a new config message."""
         self.controller.task_config = from_event(event, type(self.controller.task_config))
 
+    def _send_output(self, output_id: str, data: pa.Array, metadata: dict | None = None) -> None:
+        """Publish an output, tolerating event-stream closure during shutdown.
+
+        During Ctrl-C / dataflow teardown the dora event stream can close while a step is in
+        progress, which makes ``send_output`` raise ``RuntimeError``. Treat that as a stop signal
+        so shutdown stays quiet instead of surfacing a traceback.
+        """
+        if not self._running:
+            return
+        try:
+            self.node.send_output(output_id, data, metadata or {})
+        except RuntimeError:
+            self._running = False
+
     def write_controls(self) -> None:
         """Util that publishes the current controller spline."""
         # send control action
         arr, metadata = to_arrow(self.controller.spline_data)
-        self.node.send_output("controls", arr, metadata)
+        self._send_output("controls", arr, metadata)
 
         # send traces
         if self.controller.traces is not None and len(self.controller.traces) > 0:
@@ -132,7 +149,7 @@ class ControllerNode(DoraNode):
                 "all_traces_rollout_size": str(self.controller.all_traces_rollout_size),
                 "shape": self.controller.traces.shape,
             }
-            self.node.send_output("traces", pa.array(self.controller.traces.flatten()), metadata=metadata)
+            self._send_output("traces", pa.array(self.controller.traces.flatten()), metadata=metadata)
 
     @on_event("INPUT", "states")
     def update_states(self, event: dict) -> None:
@@ -163,16 +180,18 @@ class ControllerNode(DoraNode):
             self.controller.update_action()
             end = time.perf_counter()
 
-        self.node.send_output("plan_time", pa.array([end - start]))
+        self._send_output("plan_time", pa.array([end - start]))
         self.write_controls()
 
     def spin(self) -> None:
         """Spin logic for the controller node."""
         try:
-            while True:
+            while self._running:
                 start_time = time.time()
                 self.parse_messages()
                 self.step()
+                if not self._running:
+                    break
 
                 # Force controller to run at fixed rate specified by control_freq.
                 sleep_dt = 1 / self.controller.controller_cfg.control_freq - (time.time() - start_time)

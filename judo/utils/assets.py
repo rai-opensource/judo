@@ -7,6 +7,20 @@ from pathlib import Path
 
 import requests
 
+_TRUTHY_ENV_VALUES = {"1", "true", "yes", "on"}
+
+
+def mesh_downloads_disabled() -> bool:
+    """Return whether judo should skip downloading mesh assets from GitHub releases.
+
+    Network downloads are enabled by default. Third-party or offline deployments (e.g. air-gapped
+    robots, hermetic build systems that vendor meshes themselves) can opt out by setting the
+    ``JUDO_OFFLINE`` environment variable to a truthy value (``1``, ``true``, ``yes``, ``on``).
+    When disabled, :func:`download_and_extract_meshes` becomes a no-op and callers are expected to
+    provide the meshes through other means (e.g. a copy already present on disk).
+    """
+    return os.environ.get("JUDO_OFFLINE", "").strip().lower() in _TRUTHY_ENV_VALUES
+
 
 def acquire_lock(lock_path: Path, timeout: int = 60, poll_interval: float = 0.1) -> None:
     """Acquire a lock by creating a lock file atomically.
@@ -39,7 +53,15 @@ def download_and_extract_meshes(
     asset_name: str = "meshes.zip",
     tag: str | None = None,
 ) -> None:
-    """Downloads meshes.zip from the latest public GitHub release and extracts it."""
+    """Downloads meshes.zip from the latest public GitHub release and extracts it.
+
+    This is a no-op when mesh downloads are disabled via the ``JUDO_OFFLINE`` environment variable
+    (see :func:`mesh_downloads_disabled`), allowing offline/third-party deployments to supply their
+    own meshes without any network access.
+    """
+    if mesh_downloads_disabled():
+        return
+
     extract_path = Path(extract_root).expanduser()
     meshes_path = extract_path / "meshes"
     lock_path = extract_path / ".meshes_download.lock"
