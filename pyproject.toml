@@ -30,12 +30,16 @@ classifiers = [
 ]
 
 dependencies = [
-    "dora-utils",  # dora + qol utils for writing nodes
+    "dacite",  # run_mpc config loading
     "h5py",
+    "hydra-core",  # config management
     "mujoco>=3.6.0,<3.7",
+    "networkx",  # unlocked graph editor
     "numpy",
+    "omegaconf",
     "pillow",  # for displaying app logo
     "pycparser",
+    "pyyaml",
     "requests",  # for sharing GUI link
     "rich",  # for displaying tables in benchmarking
     "robot_descriptions",  # for loading mujoco_menagerie Spot meshes
@@ -50,6 +54,7 @@ dependencies = [
 [project.scripts]
 judo = "judo.cli:app"
 benchmark = "judo.cli:benchmark"
+judo-graph-ui = "judo.unlocked.graph.ui.server:main"
 run_mpc = "run_mpc.cli:main"
 
 [tool.hatch.metadata]
@@ -83,6 +88,8 @@ dev = [
     "auditwheel",
     "build",
     "judo-rai[docs]",
+    "parameterized",
+    "petname",
     "pre-commit",
     "pybind11-stubgen",
     "pyright",
@@ -108,6 +115,7 @@ testpaths = [
 include = ["judo", "tests", "run_mpc"]
 exclude = [
     "**/__pycache__",
+    "judo/unlocked",  # vendored from starfish, kept identical to it
 ]
 defineConstant = { DEBUG = true }
 stubPath = "typings"
@@ -151,6 +159,7 @@ exclude=[
     "venv",
     "docs",
     "mujoco_extensions",
+    "judo/unlocked",  # vendored from starfish, kept identical to it
 ]
 
 [tool.ruff.lint]

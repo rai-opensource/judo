@@ -1,0 +1,8 @@
+task: cylinder_push
+optimizer: cem
+
+custom_tasks: null
+custom_optimizers: null
+controller_config_overrides: null
+optimizer_config_overrides: null
+sim_pause_button: true

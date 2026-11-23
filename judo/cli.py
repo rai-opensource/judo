@@ -1,17 +1,15 @@
 # Copyright (c) 2025 Robotics and AI Institute LLC. All rights reserved.
 
-import atexit
-import os
-import signal
-import subprocess
 import warnings
 from pathlib import Path
 
 import hydra
-from dora_utils.launch.run import run
 from hydra import compose, initialize_config_dir
 from hydra.core.config_store import ConfigStore
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
+
+from judo.unlocked.graph.runner import run_builder
+from judo.unlocked.logging_util import setup_logger
 
 # suppress annoying warning from hydra
 warnings.filterwarnings(
@@ -23,88 +21,15 @@ warnings.filterwarnings(
 
 CONFIG_PATH = (Path(__file__).parent / "configs").resolve()
 
-# ################################################################ #
-# Process cleanup for Ctrl+C                                       #
-#                                                                  #
-# Problems with dora_utils's cleanup (run.py):                     #
-# 1. Calls `dora destroy` BEFORE terminating nodes, so nodes hit   #
-#    "broken pipe" trying to notify the dead daemon (noisy warns). #
-# 2. Catches TimeoutExpired with no SIGKILL fallback → orphans.    #
-# 3. `dora up` starts the daemon as a separate background process  #
-#    outside any tracked process group — if `dora destroy` is      #
-#    interrupted (double Ctrl+C), the daemon survives.             #
-#                                                                  #
-# Fix: custom SIGINT handler that counts presses.                  #
-#  - 1st Ctrl+C: SIGTERM nodes (while daemon alive → no broken     #
-#    pipe warnings), then raise KeyboardInterrupt for run.py's     #
-#    normal cleanup path.                                          #
-#  - 2nd Ctrl+C: uninterruptible force cleanup — `dora destroy`    #
-#    in a new session + SIGKILL all pgids + os._exit().            #
-#  - atexit: same force cleanup as safety net for single Ctrl+C.   #
-# ################################################################ #
 
-_spawned_pgids: list[int] = []
-_node_pgids: list[int] = []
-_OriginalPopen = subprocess.Popen
-_sigint_count = 0
+def _run(cfg: DictConfig, benchmark: bool = False) -> None:
+    """Build the unLocked graph from the hydra config and run it until it stops."""
+    from judo.app.graph import build, build_benchmark  # noqa: PLC0415
 
-
-class _TrackingPopen(_OriginalPopen):  # type: ignore[misc]
-    """Popen wrapper that records process group IDs of new-session children."""
-
-    def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
-        super().__init__(*args, **kwargs)
-        if kwargs.get("start_new_session"):
-            _spawned_pgids.append(self.pid)
-            cmd = args[0] if args else kwargs.get("args", "")
-            if isinstance(cmd, str) and "dora" not in cmd:
-                _node_pgids.append(self.pid)
-
-
-def _force_cleanup() -> None:
-    """Destroy dora daemon and SIGKILL all tracked process groups.
-
-    Safe to call from signal handlers and atexit. Idempotent.
-    """
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
-    try:
-        _OriginalPopen(
-            ["dora", "destroy"],
-            start_new_session=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        ).wait(timeout=5)
-    except Exception:
-        pass
-    for pgid in _spawned_pgids:
-        try:
-            os.killpg(pgid, signal.SIGKILL)
-        except (ProcessLookupError, PermissionError, OSError):
-            pass
-
-
-def _sigint_handler(signum: int, frame: object) -> None:
-    """Handle Ctrl+C: graceful on first press, force-kill on second."""
-    global _sigint_count  # noqa: PLW0603
-    _sigint_count += 1
-    if _sigint_count >= 2:
-        # Second Ctrl+C: uninterruptible force cleanup, then exit immediately.
-        _force_cleanup()
-        os._exit(130)
-    # First Ctrl+C: SIGTERM nodes while daemon is still alive so they can
-    # disconnect cleanly (avoids broken-pipe warnings), then raise
-    # KeyboardInterrupt for run.py's normal cleanup path.
-    for pgid in _node_pgids:
-        try:
-            os.killpg(pgid, signal.SIGTERM)
-        except (ProcessLookupError, PermissionError, OSError):
-            pass
-    raise KeyboardInterrupt
-
-
-subprocess.Popen = _TrackingPopen  # type: ignore[misc]
-atexit.register(_force_cleanup)
-signal.signal(signal.SIGINT, _sigint_handler)
+    setup_logger()
+    kwargs = OmegaConf.to_container(cfg, resolve=True)
+    assert isinstance(kwargs, dict)
+    run_builder((build_benchmark if benchmark else build)(**{str(k): v for k, v in kwargs.items()}))
 
 
 # ### #
@@ -112,23 +37,18 @@ signal.signal(signal.SIGINT, _sigint_handler)
 # ### #
 
 
-# The default configuration file assumes the user is using Dora-RS as a middleware. The Judo app is designed to be
-# compatible with different middleware options (e.g. Dora-RS, ZeroMQ, ROS2, etc.).
-@hydra.main(config_path=str(CONFIG_PATH), config_name="judo_dora_default", version_base="1.3")
+@hydra.main(config_path=str(CONFIG_PATH), config_name="judo_default", version_base="1.3")
 def main_app(cfg: DictConfig) -> None:
     """Main function to run judo via a hydra configuration yaml file."""
-    try:
-        run(cfg)
-    except (KeyboardInterrupt, SystemExit):
-        _force_cleanup()
+    _run(cfg)
 
 
 def _warm_caches() -> None:
-    """Pre-populate caches before Dora spawns subprocesses.
+    """Pre-populate caches before the graph forks its processes.
 
     robot_descriptions clones mujoco_menagerie on first import with no
     cross-process locking, so we must do it here in the single parent
-    process to avoid races between Dora nodes.
+    process to avoid races between nodes.
     """
     from judo import MODEL_PATH  # noqa: PLC0415
     from judo.utils.assets import download_and_extract_meshes  # noqa: PLC0415
@@ -155,11 +75,11 @@ def app() -> None:
     """Entry point for the judo CLI."""
     _require_mujoco_extensions()
     _warm_caches()
-    # we store judo_dora_default in the config store so that custom dora configs outside of judo can inherit from it
+    # we store judo_default in the config store so that custom configs outside of judo can inherit from it
     cs = ConfigStore.instance()
     with initialize_config_dir(config_dir=str(CONFIG_PATH), version_base="1.3"):
-        default_cfg = compose(config_name="judo_dora_default")
-        cs.store("judo_dora", default_cfg)  # don't name this judo_dora_default so it doesn't clash
+        default_cfg = compose(config_name="judo_default")
+        cs.store("judo", default_cfg)  # don't name this judo_default so it doesn't clash
     main_app()
 
 
@@ -171,10 +91,7 @@ def app() -> None:
 @hydra.main(config_path=str(CONFIG_PATH), config_name="benchmark_default", version_base="1.3")
 def main_benchmark(cfg: DictConfig) -> None:
     """Benchmarking hydra call."""
-    try:
-        run(cfg)
-    except (KeyboardInterrupt, SystemExit):
-        _force_cleanup()
+    _run(cfg, benchmark=True)
 
 
 def benchmark() -> None:

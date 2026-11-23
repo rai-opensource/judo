@@ -1,6 +1,7 @@
 # Copyright (c) 2025 Robotics and AI Institute LLC. All rights reserved.
 
 import threading
+from typing import Callable
 
 import mujoco
 import numpy as np
@@ -19,6 +20,19 @@ from judo.tasks import TaskRegistration, get_registered_tasks
 from judo.visualizers.model import ViserMjModel
 
 ElementType = GuiImageHandle | GuiInputHandle | GuiFolderHandle | MeshHandle | IcosphereHandle
+
+
+class _NotifyingEvent(threading.Event):
+    """A ``threading.Event`` that also calls ``on_set`` every time it is set, to push GUI changes immediately."""
+
+    def __init__(self, on_set: Callable[[], None]) -> None:
+        super().__init__()
+        self._on_set = on_set
+
+    def set(self) -> None:
+        """Set the flag and notify."""
+        super().set()
+        self._on_set()
 
 
 class Visualizer:
@@ -40,8 +54,25 @@ class Visualizer:
         sim_pause_button: bool = True,
         geom_exclude_substring: str = "collision",
         available_tasks: dict[str, TaskRegistration] | None = None,
+        on_event: Callable[[str], None] | None = None,
     ) -> None:
-        """Initialize the visualization node."""
+        """Initialize the visualization node.
+
+        Args:
+            init_task: Name of the task to initialize.
+            init_optimizer: Name of the optimizer to initialize.
+            task_registration_cfg: Optional config for custom task registration.
+            optimizer_registration_cfg: Optional config for custom optimizer registration.
+            controller_override_cfg: Optional task-specific controller config overrides.
+            optimizer_override_cfg: Optional task-specific optimizer config overrides.
+            sim_pause_button: Whether to display a simulation pause button.
+            geom_exclude_substring: Geometry name substring to exclude from visualization.
+            available_tasks: Optional mapping of task names to registrations for the task selector.
+            on_event: Optional hook called with the event name ("task", "task_reset", "sim_pause", "optimizer",
+                "controller_config", "optimizer_config" or "task_config") each time the GUI sets that change flag,
+                so the change can be published immediately instead of polling the flags.
+        """
+        self._on_event = on_event
         # handling custom task and optimizer registration
         if task_registration_cfg is not None:
             register_tasks_from_cfg(task_registration_cfg)
@@ -58,12 +89,12 @@ class Visualizer:
         self.optimizer_name = ""
 
         self.task_lock = threading.Lock()
-        self.task_updated = threading.Event()
+        self.task_updated = self._make_event("task")
 
         self.sim_pause_button = sim_pause_button
         if self.sim_pause_button:
             self.sim_pause_lock = threading.Lock()
-            self.sim_pause_updated = threading.Event()
+            self.sim_pause_updated = self._make_event("sim_pause")
 
         # handling task-specific config overrides
         if controller_override_cfg is not None:
@@ -73,10 +104,17 @@ class Visualizer:
 
         self.set_task(init_task, init_optimizer)
 
+    def _make_event(self, name: str) -> threading.Event:
+        """Create the change flag for ``name``; setting it also calls the ``on_event`` hook, if any."""
+        on_event = self._on_event
+        if on_event is None:
+            return threading.Event()
+        return _NotifyingEvent(lambda: on_event(name))
+
     def register_controller_config_overrides(self, controller_override_cfg: DictConfig) -> None:
         """Register task-specific controller config overrides.
 
-        We do this in the Visualization node because this is the "master" node in the dora stack.
+        We do this in the Visualization node because this is the "master" node in the graph.
         """
         # as opposed to the optimizer, there is only one Controller class, so for each task, we simply need to specify
         # the controller parameter overrides
@@ -87,7 +125,7 @@ class Visualizer:
     def register_optimizer_config_overrides(self, optimizer_override_cfg: DictConfig) -> None:
         """Register task-specific optimizer config overrides.
 
-        We do this in the Visualization node because this is the "master" node in the dora stack.
+        We do this in the Visualization node because this is the "master" node in the graph.
         """
         for task_name in optimizer_override_cfg.keys():  # task name in registry
             for optimizer_name in optimizer_override_cfg[task_name].keys():  # optimizer name in registry
@@ -121,22 +159,22 @@ class Visualizer:
         _, optimizer_config_cls = optimizer_entry
 
         self.controller_config_lock = threading.Lock()
-        self.controller_config_updated = threading.Event()
+        self.controller_config_updated = self._make_event("controller_config")
         self.controller_config = ControllerConfig()
         self.controller_config.set_override(task_name)
 
         self.optimizer_lock = threading.Lock()
-        self.optimizer_updated = threading.Event()
+        self.optimizer_updated = self._make_event("optimizer")
 
         self.optimizer_config_lock = threading.Lock()
-        self.optimizer_config_updated = threading.Event()
+        self.optimizer_config_updated = self._make_event("optimizer_config")
         self.optimizer_config = optimizer_config_cls()
         self.optimizer_config.set_override(task_name)
 
         self.task_config_lock = threading.Lock()
-        self.task_config_updated = threading.Event()
+        self.task_config_updated = self._make_event("task_config")
 
-        self.task_reset_updated = threading.Event()
+        self.task_reset_updated = self._make_event("task_reset")
 
         self.setup_gui()
 
@@ -291,9 +329,9 @@ class Visualizer:
         @optimizer_dropdown.on_update
         def _(_: viser.GuiEvent) -> None:
             """Callback for when the optimizer dropdown is updated."""
-            # first, send the name of the new optimizer
-            self.optimizer_updated.set()
+            # first, send the name of the new optimizer (set the name before the flag: ``on_event`` reads it at once)
             self.optimizer_name = optimizer_dropdown.value
+            self.optimizer_updated.set()
 
             # update config
             optimizer_entry = self.available_optimizers.get(self.optimizer_name)

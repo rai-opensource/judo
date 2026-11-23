@@ -1,7 +1,7 @@
 ## Configuration with `hydra`
-`judo` is mainly built on top of `dora <https://dora-rs.ai/>`_ for interprocess communication and `hydra <https://hydra.cc/docs/intro/>`_ for configuration management.
+`judo` is mainly built on top of its own `unlocked` shared-memory dataflow runtime (``judo/unlocked``) for interprocess communication and `hydra <https://hydra.cc/docs/intro/>`_ for configuration management.
 
-These two elements work together in tandem - the dataflow specification for `dora` specifies things like the expected inputs/outputs of each node, the sources (aka "topics" in ROS2 language), etc. The `hydra` yaml file includes the dataflow spec while also specifying parameters required to construct the nodes. See `judo/configs/judo_default` for an example on usage.
+These two elements work together in tandem - the graph of nodes (simulation, controller, visualization) and their connections is defined in ``judo/app/graph.py``, and the `hydra` yaml file specifies the parameters passed to that graph builder (task, optimizer, custom registrations, overrides). See `judo/configs/judo_default.yaml` for an example on usage. To inspect or edit the graph in the browser, run `judo-graph-ui`.
 
 You can write custom configs for things like overrides, instantiating custom nodes, or setting initial tasks/optimizers. Once a configuration file has been written, usage is simple:
 ```bash

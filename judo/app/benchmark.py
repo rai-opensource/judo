@@ -1,57 +1,51 @@
 # Copyright (c) 2025 Robotics and AI Institute LLC. All rights reserved.
 
-import sys
+import os
+import signal
 from collections import defaultdict
 
 import numpy as np
-import pyarrow as pa
-from dora_utils.node import DoraNode, on_event
 from rich.console import Console
 from rich.table import Table
 
+from judo.app.structs import GuiState
 from judo.optimizers import get_registered_optimizers
 from judo.tasks import get_registered_tasks
 
 
-class BenchmarkerNode(DoraNode):
+class BenchmarkerNode:
     """A node that performs benchmarking of task/optimizer pairs."""
 
-    def __init__(self, node_id: str = "benchmarker", max_workers: int | None = None, num_samples: int = 100) -> None:
+    def __init__(self, num_samples: int = 100) -> None:
         """Initialize the benchmarker node."""
-        super().__init__(node_id=node_id, max_workers=max_workers)
+        self.num_samples = num_samples
+        self.active_pair: tuple[str, str] | None = None
+        self.results: dict[tuple[str, str], dict[str, list[float]]] = {}
+        self.done = False
 
-        # storing all available tasks and optimizers
+    def setup(self) -> None:
+        """Enumerate all task/optimizer pairs (runs once the node's process has started)."""
         self.available_optimizers = get_registered_optimizers()
         self.available_tasks = get_registered_tasks()
-        self.opt_keys = list(self.available_optimizers.keys())
-        self.task_keys = list(self.available_tasks.keys())
-        self.key_pairs = [(task, opt) for task in self.task_keys for opt in self.opt_keys]
-        self.active_pair = None
-        self.num_samples = num_samples
-
-        # initialize results dictionary
-        self.results = {}
+        self.key_pairs = [(task, opt) for task in self.available_tasks for opt in self.available_optimizers]
         print("Starting benchmarking!")
-        self.cycle_task_optimizer_pair()
 
-    def cycle_task_optimizer_pair(self) -> None:
-        """Cycles through the next task/optimizer pair."""
-        if self.key_pairs:
-            print(f"    Pair: {self.key_pairs[0]}")
-
-            # initialize empty results dict
-            task_name, optimizer_name = self.key_pairs.pop(0)
-            self.active_pair = (task_name, optimizer_name)
-            self.results[(task_name, optimizer_name)] = {"plan_times": []}
-
-            # instantiate the task and optimizer
-            if task_name != self.active_pair[0]:
-                self.node.send_output("task", pa.array([task_name]))
-            if optimizer_name != self.active_pair[1]:
-                self.node.send_output("optimizer", pa.array([optimizer_name]))
-        else:
+    def cycle_task_optimizer_pair(self) -> GuiState | None:
+        """Moves to the next task/optimizer pair, returning the GUI state that switches the sim and controller to it."""
+        if not self.key_pairs:
             self.print_results()
-            sys.exit(0)
+            self.done = True
+            # Ask the runner (our parent process) for its orderly tiered shutdown, as Ctrl-C would. Stopping this node or
+            # exiting here instead would unlink the shared memory of the gui_state queue while sim/controller are
+            # still reading them.
+            os.kill(os.getppid(), signal.SIGTERM)
+            return None
+
+        task_name, optimizer_name = self.key_pairs.pop(0)
+        print(f"    Pair: {(task_name, optimizer_name)}")
+        self.active_pair = (task_name, optimizer_name)
+        self.results[self.active_pair] = {"plan_times": []}
+        return GuiState(task=task_name, optimizer=optimizer_name)
 
     def print_results(self) -> None:
         """Prints the results of the benchmarking using separate tables per task, with clean rules."""
@@ -90,18 +84,23 @@ class BenchmarkerNode(DoraNode):
                 )
 
             console.print(table)
-        print("Benchmarking complete! You may terminate the stack.")
+        print("Benchmarking complete! Shutting down the graph.")
 
-    @on_event("INPUT", "plan_time")
-    def on_plan_time(self, event: dict) -> None:
-        """Handles the plan time event."""
-        if self.active_pair is None and len(self.results[self.active_pair]["plan_times"]) < self.num_samples:
-            return
+    def step(self, plan_time: float | None) -> GuiState | None:
+        """Record a plan time and, once enough samples are collected, switch to the next pair.
 
-        # append the plan time to the results
-        plan_time = event["value"].to_numpy(zero_copy_only=False)[0]
-        self.results[self.active_pair]["plan_times"].append(plan_time)
+        Returns:
+            The GUI state switching to the next pair, or None (publishes nothing) while sampling the current one.
+        """
+        if self.done:
+            return None
+        if self.active_pair is None:
+            return self.cycle_task_optimizer_pair()
+        if plan_time is None:
+            return None
 
-        # cycle to the next task/optimizer pair
-        if len(self.results[self.active_pair]["plan_times"]) == self.num_samples:
-            self.cycle_task_optimizer_pair()
+        plan_times = self.results[self.active_pair]["plan_times"]
+        plan_times.append(plan_time)
+        if len(plan_times) == self.num_samples:
+            return self.cycle_task_optimizer_pair()
+        return None
