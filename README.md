@@ -16,7 +16,7 @@
 `judo` is a `python` package inspired by [`mujoco_mpc`](https://github.com/google-deepmind/mujoco_mpc) that makes sampling-based MPC easy. Features include:
 - 👩‍💻 A simple interface for defining custom tasks and controllers.
 - 🤖 Automatic parsing of configs into a browser-based GUI, allowing real-time parameter tuning.
-- 📬 Asynchronous interprocess communication using [`dora`](https://dora-rs.ai/) for easy integration with your hardware.
+- 📬 Asynchronous interprocess communication using the built-in shared-memory `unlocked` dataflow runtime (with a browser graph editor, `judo-graph-ui`) for easy integration with your hardware.
 - 🗂️ Configuration management with [`hydra`](https://hydra.cc/docs/intro/) for maximum flexibility.
 
 > ⚠️ **Disclaimer** ⚠️
@@ -127,7 +127,7 @@ For batched MPC trajectory generation, see [run_mpc/README.md](run_mpc/README.md
 ## 3. Running `judo` as a Dependency
 You can easily install `judo` as a dependency in your own project. A few comments:
 * You can still use the `judo` CLI command from anywhere, so long as you are working in an environment where `judo` is installed.
-* If you do this, you should use the `hydra` configuration system to do things like registering custom tasks and optimizers, modifying the `dora` nodes in the sim stack, etc. See the [Configuration with `hydra`](#configuration-with-hydra) and [Config Registration](#config-registration) sections for more details.
+* If you do this, you should use the `hydra` configuration system to do things like registering custom tasks and optimizers, modifying the `unlocked` graph of the sim stack, etc. See the [Configuration with `hydra`](#configuration-with-hydra) and [Config Registration](#config-registration) sections for more details.
 * You can also run the app programmatically, as shown above.
 
 ## 4. Benchmarking

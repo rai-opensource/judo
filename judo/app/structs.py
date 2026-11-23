@@ -1,6 +1,6 @@
 # Copyright (c) 2025 Robotics and AI Institute LLC. All rights reserved.
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Any, Literal
 
@@ -25,6 +25,32 @@ class JudoEvent:
 
     event: EventType
     value: str | None = None
+
+
+@dataclass
+class GuiState:
+    """Snapshot of every GUI setting, published whole whenever any of them changes.
+
+    A newer snapshot supersedes all older ones, so consumers read it on an ``optional`` edge and may safely miss
+    intermediate snapshots. ``task``, ``optimizer`` and ``sim_paused`` are applied when they differ from the
+    consumer's current value. Resets and configs are applied when their entry in ``revisions`` (bumped on every reset
+    click / config edit) moves: a reset has no value to compare, and configs hold numpy arrays.
+
+    Configs are dicts (``dataclasses.asdict``): their dataclasses are generated at runtime and cannot be pickled by
+    reference. None means "not set" (the benchmarker only drives the task and optimizer).
+    """
+
+    task: str
+    optimizer: str
+    sim_paused: bool = False
+    controller_config: dict[str, Any] | None = None
+    optimizer_config: dict[str, Any] | None = None
+    task_config: dict[str, Any] | None = None
+    revisions: dict[str, int] = field(default_factory=dict)
+
+    def moved(self, applied: dict[str, int]) -> set[str]:
+        """Names in ``revisions`` that moved since the ``applied`` revisions."""
+        return {name for name, rev in self.revisions.items() if rev != applied.get(name, 0)}
 
 
 @dataclass

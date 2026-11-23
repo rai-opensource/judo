@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>unLocked Graph Editor</title>
+    <link rel="stylesheet" href="https://esm.sh/@xyflow/react@12/dist/style.css" />
+    <style>
+      html, body, #root { height: 100%; margin: 0; font-family: system-ui, sans-serif; }
+      .toolbar {
+        position: absolute; top: 8px; left: 8px; z-index: 10;
+        background: #fff; padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08); display: flex; gap: 8px; align-items: center;
+      }
+      .toolbar button { padding: 4px 10px; cursor: pointer; }
+      .inspector {
+        position: absolute; top: 8px; right: 8px; bottom: 8px; width: 320px;
+        z-index: 10; background: #fff; padding: 10px 12px;
+        border: 1px solid #ddd; border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        overflow: auto; font-size: 12px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      /* Auto-hide: when unpinned and not hovered, slide the panel off the right
+         edge, leaving a ~24px grip sticking out to hover/reveal it. */
+      .inspector.collapsed { transform: translateX(calc(100% - 24px)); box-shadow: -2px 0 8px rgba(0,0,0,0.14); }
+      .inspector .inspector-head { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; }
+      .inspector .inspector-head h3 { margin: 0; flex: 1; }
+      .inspector .pin-btn {
+        border: none; background: none; cursor: pointer; font-size: 14px; line-height: 1;
+        padding: 2px 5px; border-radius: 4px; opacity: 0.9; flex: none;
+        transition: transform 0.15s ease, opacity 0.15s ease;
+      }
+      .inspector .pin-btn:hover { background: #eee; }
+      .inspector .pin-btn:not(.pinned) { opacity: 0.45; transform: rotate(45deg); }
+      .inspector .grip {
+        position: absolute; left: 0; top: 0; bottom: 0; width: 24px;
+        display: none; align-items: center; justify-content: center;
+        cursor: pointer; color: #888; font-size: 11px; letter-spacing: 1px;
+        writing-mode: vertical-rl; transform: rotate(180deg); user-select: none;
+        border-right: 1px solid #eee; background: #f7f7f7;
+      }
+      .inspector.collapsed .grip { display: flex; }
+
+      .inspector h3 { margin: 0 0 6px; font-size: 13px; }
+      .inspector h4 { margin: 6px 0; font-size: 12px; color: #333; }
+      .inspector .hint { color: #888; font-style: italic; }
+      .inspector .section { display: flex; flex-direction: column; gap: 4px; }
+      .inspector .kv { display: grid; grid-template-columns: 80px 1fr; align-items: center; gap: 6px; }
+      .inspector .k  { color: #666; }
+      .inspector .v  { display: flex; gap: 4px; align-items: center; min-width: 0; }
+      .inspector .v.mono { font-family: ui-monospace, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .inspector .v select { flex: 1; min-width: 0; }
+      .inspector .v input  { flex: 1; min-width: 0; padding: 2px 4px; }
+      .inspector .v button { padding: 0 6px; cursor: pointer; }
+      .inspector .subsection { margin-top: 8px; padding-top: 6px; border-top: 1px dashed #ddd; }
+      .inspector .subhead    { font-weight: 600; margin: 8px 0 4px; color: #444; }
+      .inspector .section-title { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+      .inspector .dim        { color: #888; }
+      .inspector .doc        { color: #555; font-style: italic; margin: 2px 0 6px; }
+      .inspector .err        { color: #c62828; }
+      .inspector .attrs li   { display: flex; gap: 4px; align-items: baseline; cursor: default; flex-wrap: wrap; }
+      .inspector .attrs li:hover { background: transparent; }
+      .inspector .attr-name  { cursor: pointer; }
+      .inspector .attr-name:hover { text-decoration: underline; }
+      .inspector .attr-source { margin-left: auto; font-size: 10px; }
+      .inspector .ref-pills  { display: inline-flex; gap: 3px; flex-wrap: wrap; }
+      .inspector .ref-pill   {
+        font-size: 10px; padding: 0 5px; border-radius: 8px;
+        background: #fff3e0; color: #e65100; border: 1px solid #ffcc80;
+        cursor: pointer; user-select: none;
+      }
+      .inspector .ref-pill:hover { background: #ffe0b2; }
+      .inspector .methods    { display: flex; flex-wrap: wrap; gap: 4px; margin: 2px 0 6px; }
+      .inspector .method-pill {
+        font-size: 10px; padding: 1px 6px; border-radius: 10px;
+        background: #eef2ff; color: #1a237e; border: 1px solid #c5cae9;
+        cursor: pointer; user-select: none;
+      }
+      .inspector .method-pill:hover { background: #e8eaf6; }
+      .inspector .instance-panel ul.members li { cursor: pointer; }
+      .inspector hr { border: none; border-top: 1px solid #eee; margin: 10px 0; }
+      .inspector .groups details { margin: 2px 0; }
+      .inspector .groups summary { cursor: pointer; user-select: none; padding: 2px 0; }
+      .inspector .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
+      .inspector .count  { color: #888; font-size: 11px; }
+      .inspector ul { list-style: none; margin: 2px 0 4px 16px; padding: 0; }
+      .inspector li { padding: 1px 4px; cursor: pointer; border-radius: 3px; font-family: ui-monospace, monospace; font-size: 11px; }
+      .inspector li:hover  { background: #eef; }
+      .inspector li.active { background: #1e88e5; color: #fff; }
+
+      /* Eye visibility toggles (hide/unhide nodes + instances). */
+      .inspector .eye {
+        border: none; background: none; cursor: pointer;
+        padding: 0 3px; font-size: 12px; line-height: 1;
+        opacity: 0.8; flex: none;
+      }
+      .inspector .eye:hover { opacity: 1; }
+      .inspector .eye.off { opacity: 0.4; }
+      .inspector .eye.eye-group { float: right; margin-left: 6px; }
+      .inspector .eye.eye-inline { margin-left: 6px; }
+      .inspector .lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .inspector .v .lbl { flex: 1; }
+      .inspector .groups li { display: flex; align-items: center; gap: 4px; }
+      .inspector .groups li .lbl { flex: 1; }
+      .inspector ul.members li { display: flex; align-items: center; gap: 4px; }
+      .inspector ul.members li .lbl { flex: 1; }
+      .inspector li.hidden-row .lbl { opacity: 0.5; }
+      /* A fully-hidden group / instance: grey out its name (and the eye dims via
+         .eye.off) so the inspector shows at a glance that it's hidden. */
+      .inspector summary.group-hidden { opacity: 0.5; }
+      .inspector .section-title.group-hidden { opacity: 0.5; }
+      .inspector .show-all {
+        margin-left: auto; font-size: 10px; padding: 1px 6px; cursor: pointer;
+        border: 1px solid #ddd; border-radius: 4px; background: #f7f7f7; color: #444;
+      }
+      .inspector .show-all:hover { background: #eee; }
+
+      .node-card {
+        border: 1px solid #555; border-radius: 6px;
+        background: #fafafa; font-size: 12px; min-width: 200px; max-width: 280px;
+        padding-bottom: 6px;
+      }
+      /* Externally driven nodes (spec ``node_type`` != "unlocked"): driven from OUTSIDE the graph, so
+         the scheduler opens their stages but gives them no worker thread. Tinted by WHICH drive
+         method applies so the two are distinguishable at a glance -- orange for NodeType.GENERATOR
+         (an external consumer iterates Node.generator), yellow for NodeType.CALLBACK (an external
+         producer calls Node.callback). Border WIDTH is deliberately left at 1px: the constant chip
+         anchoring in positionConstNodes() is hand-computed against the .node-card geometry, so
+         widening the border here would shift those chips. */
+      .node-card.node-type-generator {
+        border-color: #ef6c00;
+        background: #fff6ee;
+      }
+      .node-card.node-type-generator .head { border-bottom-color: #f6cba0; }
+      .node-card.node-type-callback {
+        border-color: #f9a825;
+        background: #fffdf3;
+      }
+      .node-card.node-type-callback .head { border-bottom-color: #f7e2a8; }
+      .node-card .head { padding: 6px 10px 6px 10px; border-bottom: 1px solid #eee; }
+      .node-card .title {
+        font-weight: 600; line-height: 16px;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .node-card .target {
+        color: #666; font-size: 10px; line-height: 14px;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .node-card .badges { display: flex; gap: 3px; margin-top: 3px; flex-wrap: wrap; }
+      .node-card .badge {
+        font-size: 9px; line-height: 12px; padding: 1px 5px;
+        border-radius: 8px; color: #222; white-space: nowrap;
+        max-width: 120px; overflow: hidden; text-overflow: ellipsis;
+      }
+      .node-card .rows { display: flex; flex-direction: column; }
+      .node-card .row { display: flex; justify-content: space-between; height: 20px; }
+      .node-card .cell {
+        position: relative; flex: 1; display: flex; align-items: center;
+        font-size: 11px;
+      }
+      .node-card .cell.in  { padding-left: 14px; justify-content: flex-start; gap: 4px; }
+      .node-card .cell.in.bound .label { color: #6a1b9a; }
+      .node-card .cell.out { padding-right: 14px; justify-content: flex-end; text-align: right; }
+
+      /* Constant nodes: small chip-shaped node representing a bound input. */
+      .const-card {
+        background: #fff;
+        border: 1px solid #ce93d8;
+        border-radius: 10px;
+        padding: 2px 8px;
+        box-sizing: border-box;
+        width: 53px; height: 20px; line-height: 16px;
+        font-size: 10px; color: #4a148c;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+        display: inline-flex; align-items: center;
+      }
+      .const-card:hover { border-color: #9c27b0; background: #faf3fb; }
+      .const-card .const-value {
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
+      .react-flow__edge.edge-const .react-flow__edge-path {
+        stroke: #ce93d8; stroke-dasharray: 4 3;
+      }
+      .react-flow__handle {
+        width: 8px !important; height: 8px !important;
+        min-width: 8px !important; min-height: 8px !important;
+        border-radius: 50% !important; background: #1e88e5 !important;
+        border: 1px solid #fff !important;
+      }
+      .react-flow__edge-path { stroke-width: 2; }
+      .edge-lossless    { stroke: #2e7d32; }
+      .edge-latest      { stroke: #ef6c00; }
+      .edge-keep_latest { stroke: #6a1b9a; }
+      .react-flow__edges, .react-flow__edgelabel-renderer { z-index: 1000 !important; }
+
+      /* Parent container ("group") nodes. */
+      .group-card {
+        width: 100%; height: 100%;
+        border: 2px dashed transparent;
+        border-radius: 10px;
+        box-sizing: border-box;
+        pointer-events: auto;
+      }
+      .group-card .group-head {
+        position: absolute; top: 0; left: 0; right: 0; height: 22px;
+        display: flex; gap: 6px; align-items: center; padding: 0 8px;
+        font-size: 11px; font-weight: 600; color: #222;
+        border-top-left-radius: 8px; border-top-right-radius: 8px;
+        opacity: 0.85;
+        cursor: move;
+      }
+      .group-card .group-kind {
+        text-transform: uppercase; font-size: 9px;
+        background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 3px;
+      }
+      .group-card .group-label  { font-family: ui-monospace, monospace; }
+      .group-card .group-count  { color: #555; font-weight: 400; font-size: 10px; }
+      /* React Flow's default selected outline on group nodes is distracting. */
+      .react-flow__node-group.selected { outline: none; box-shadow: none; }
+      .react-flow__node-group {
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+      }
+
+      /* Run / Play panel */
+      .run-panel {
+        position: absolute; left: 8px; bottom: 8px; z-index: 11;
+        width: 728px; max-width: 84vw;
+        background: #fff; border: 1px solid #ddd; border-radius: 6px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        display: flex; flex-direction: column; font-size: 12px;
+      }
+      .run-panel .run-head {
+        display: flex; align-items: center; gap: 6px;
+        padding: 6px 10px; border-bottom: 1px solid #eee;
+        min-height: 46px; box-sizing: border-box;   /* reserve 2 text lines so the button row never jumps */
+      }
+      /* Run/build status text (e.g. "paused (pid 12345) — press Resume"). Clamp to 2 lines within the
+         fixed-height head so the Build/Debug/Run buttons never shift when the status grows 1->2 lines. */
+      .run-panel .run-head .run-status {
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+        overflow: hidden; max-width: 260px; line-height: 1.2;
+      }
+      .run-panel .run-head button { padding: 2px 8px; cursor: pointer; }
+      /* Linux/GNOME-style window controls: minimize, maximize/restore, close. */
+      .run-panel .run-head .win-btns { display: flex; gap: 3px; margin-left: 8px; }
+      .run-panel .run-head .win-btn {
+        width: 22px; height: 20px; padding: 0; flex: none; box-sizing: border-box;
+        display: inline-flex; align-items: center; justify-content: center;
+        position: relative; line-height: 0; color: #333; cursor: pointer;
+        border: 1px solid #ccc; border-radius: 4px; background: #f2f2f2;
+      }
+      .run-panel .run-head .win-btn:hover { background: #e4e4e4; }
+      .run-panel .run-head .win-btn.win-close:hover {
+        background: #e81123; border-color: #e81123; color: #fff;
+      }
+      /* Minimize: a single horizontal bar. */
+      .run-panel .run-head .win-min::before {
+        content: ""; width: 10px; height: 0; border-bottom: 2px solid currentColor;
+      }
+      /* Maximize: a single square outline. */
+      .run-panel .run-head .win-max::before {
+        content: ""; width: 10px; height: 10px; box-sizing: border-box;
+        border: 1.5px solid currentColor;
+      }
+      /* Restore (when already maximized): two overlapping squares. */
+      .run-panel .run-head .win-max.is-max::before {
+        width: 8px; height: 8px; position: absolute; top: 4px; left: 7px;
+      }
+      .run-panel .run-head .win-max.is-max::after {
+        content: ""; width: 8px; height: 8px; box-sizing: border-box;
+        position: absolute; top: 7px; left: 4px;
+        border: 1.5px solid currentColor; background: inherit;
+      }
+      /* Close: an X built from two crossed bars (turns white on red hover). */
+      .run-panel .run-head .win-close::before,
+      .run-panel .run-head .win-close::after {
+        content: ""; position: absolute; top: 50%; left: 50%;
+        width: 12px; height: 2px; background: currentColor; border-radius: 1px;
+      }
+      .run-panel .run-head .win-close::before { transform: translate(-50%, -50%) rotate(45deg); }
+      .run-panel .run-head .win-close::after  { transform: translate(-50%, -50%) rotate(-45deg); }
+      .run-panel .run-form {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px;
+        padding: 8px 10px; border-bottom: 1px solid #eee;
+      }
+      .run-panel .run-row {
+        display: grid; grid-template-columns: 110px 1fr; align-items: center; gap: 6px;
+      }
+      .run-panel .run-k { color: #666; font-size: 11px; }
+      .run-panel .run-v { padding: 2px 4px; font-size: 12px; min-width: 0; }
+      /* Greyed-out row: a mujoco-only knob shown while a hardware robot is selected. */
+      .run-panel .run-row.is-disabled .run-k { opacity: 0.45; }
+      /* "More / Less" toggle between the core params and the advanced (scrollable) section. */
+      .run-panel .run-more-toggle {
+        display: block; width: 100%; text-align: left; box-sizing: border-box;
+        padding: 4px 10px; border: none; border-bottom: 1px solid #eee;
+        background: #fafafa; color: #1565c0; font-size: 11px; cursor: pointer;
+      }
+      .run-panel .run-more-toggle:hover { background: #f0f4ff; text-decoration: underline; }
+      /* Advanced params: a compact scroller so the panel stays small; unclamped when maximized. */
+      .run-panel .run-adv { max-height: 190px; overflow-y: auto; background: #fcfcfc; }
+      .run-panel.maximized .run-adv { max-height: none; }
+      /* Debug fidelity warning: threads outside scheduler control. */
+      .run-panel .unmanaged-warn {
+        display: flex; gap: 6px; align-items: flex-start;
+        padding: 6px 10px; font-size: 11px; line-height: 1.4;
+        background: #fff8e1; color: #8a6d00; border-bottom: 1px solid #ffe082;
+      }
+      .run-panel .unmanaged-warn-icon { flex: none; font-size: 13px; }
+      .run-panel .unmanaged-warn .mono { color: #6d5200; }
+      /* Debug Step-timer picker (shown when paused). */
+      .run-panel .step-timers {
+        padding: 6px 10px; border-bottom: 1px solid #eee; background: #fffdf5;
+      }
+      .run-panel .step-timers-head {
+        display: flex; align-items: baseline; gap: 8px; font-weight: 600;
+        font-size: 12px; margin-bottom: 4px;
+      }
+      .run-panel .step-timers-list {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px;
+        max-height: 120px; overflow: auto;
+      }
+      .run-panel .step-timer-item {
+        display: flex; align-items: center; gap: 5px; font-size: 11px;
+        cursor: pointer; min-width: 0;
+      }
+      .run-panel .step-timer-name {
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0;
+      }
+      .run-panel .step-timer-hz { font-size: 10px; flex: none; }
+      .run-panel .run-cmd {
+        padding: 4px 10px; font-family: ui-monospace, monospace; font-size: 11px;
+        color: #444; background: #fafafa; border-bottom: 1px solid #eee;
+        white-space: pre-wrap; word-break: break-all;
+      }
+      .run-panel .run-log {
+        margin: 0; padding: 6px 10px; height: 260px; overflow: auto;
+        background: #111; color: #ddd; font-size: 13px; line-height: 1.45;
+        font-family: ui-monospace, monospace; white-space: pre-wrap; word-break: break-all;
+      }
+      /* Console toolbar: line count + download button, above the log pane. */
+      .run-panel .run-log-bar {
+        display: flex; align-items: center; gap: 8px;
+        padding: 3px 10px; background: #1a1a1a; border-bottom: 1px solid #000;
+      }
+      .run-panel .run-log-bar .dim { color: #999; }
+      .run-panel .run-log-bar .log-dl {
+        margin-left: auto; padding: 1px 8px; cursor: pointer; font-size: 11px;
+        background: #2a2a2a; color: #ddd; border: 1px solid #444; border-radius: 4px;
+      }
+      .run-panel .run-log-bar .log-dl:hover:not(:disabled) { background: #383838; }
+      .run-panel .run-log-bar .log-dl:disabled { opacity: 0.45; cursor: default; }
+      /* Per-line console coloring (see logLineClass in app.js). */
+      .run-panel .run-log .log-line  { display: block; min-height: 1.2em; }
+      .run-panel .run-log .log-error { color: #ff6b6b; font-weight: 600; }
+      .run-panel .run-log .log-warn  { color: #ffd166; }
+      .run-panel .run-log .log-debug { color: #8a8a8a; }
+      /* Maximize / restore the run panel to (almost) fullscreen for reading logs. */
+      .run-panel.maximized {
+        left: 8px; right: 8px; top: 8px; bottom: 8px;
+        width: auto; max-width: none; z-index: 1001;
+      }
+      .run-panel.maximized .run-log { height: auto; flex: 1 1 auto; font-size: 14px; }
+      /* Minimized: only the title bar + run/play/pause/step controls remain. */
+      .run-panel.minimized .run-head { border-bottom: none; }
+      .dim { color: #888; }
+      .btn-tap {
+        background: #fff; border: 1px solid #c2c2c2; border-radius: 3px; color: #333;
+      }
+      .btn-tap.on {
+        background: #fce4ec; border-color: #d81b60; color: #ad1457;
+      }
+      .edge-tapped { }
+      .live-card {
+        border: 1px solid #eadfe5; border-radius: 4px; padding: 6px 8px;
+        background: #fff7fb; margin-top: 4px;
+      }
+      .live-head {
+        display: flex; justify-content: space-between; align-items: center;
+        font-size: 10px; color: #777; margin-bottom: 4px;
+      }
+      .live-kind {
+        display: inline-block; padding: 1px 6px; border-radius: 8px;
+        background: #d81b60; color: #fff; font-weight: 600; text-transform: uppercase;
+        letter-spacing: 0.5px; font-size: 9px;
+      }
+      .live-ts { font-family: ui-monospace, monospace; }
+      .live-empty { color: #888; font-style: italic; padding: 4px 0; font-size: 11px; }
+      .live-meta { color: #666; font-size: 10px; margin-top: 4px; font-family: ui-monospace, monospace; }
+      .live-img-wrap { background: #000; border-radius: 3px; padding: 4px; display: flex; justify-content: center; }
+      .live-img { max-width: 100%; height: auto; image-rendering: pixelated; display: block; object-fit: contain; }
+      .scrub-row { display: flex; align-items: center; gap: 6px; margin: 4px 0 6px; }
+      .scrub-row input[type=range] { accent-color: #d81b60; }
+      .timeline-panel {
+        position: fixed;
+        /* Pinned to the top so it doesn't overlap the bottom-left run panel
+           or the bottom-right viser panel. */
+        left: 8px; right: 600px;  /* leave room for the 560px viser panel on the right */
+        top: 48px; z-index: 12;
+        min-width: 420px;
+        background: #fff; border: 1px solid #c2c2c2; border-radius: 6px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+        padding: 6px 12px;
+        display: flex; flex-direction: column; gap: 4px;
+        font-size: 11px;
+      }
+      .timeline-panel input[type=range] { width: 100%; accent-color: #d81b60; }
+      .timeline-row { display: flex; align-items: center; gap: 8px; }
+
+      .live-vec-wrap { background: #fff; border: 1px solid #eee; border-radius: 3px; }
+      .live-vec { display: block; width: 100%; height: 80px; }
+      .live-scalar {
+        font-family: ui-monospace, monospace; font-size: 16px; font-weight: 600; color: #222;
+        padding: 4px 0;
+      }
+      /* Scalars nested inside a struct (e.g. an SE3 pose's x/y/z) should read as normal field values,
+         not the prominent large/bold style used for a lone top-level scalar. */
+      .live-struct-val .live-scalar { font-size: 11px; font-weight: 400; padding: 0; }
+      .live-text, .live-json {
+        font-family: ui-monospace, monospace; font-size: 11px; color: #222;
+        background: #fff; border: 1px solid #eee; border-radius: 3px;
+        padding: 4px 6px; max-height: 200px; overflow: auto;
+        white-space: pre-wrap; word-break: break-word; margin: 0;
+      }
+      .live-struct { background: #fff; border: 1px solid #eee; border-radius: 3px; padding: 3px 5px; max-height: 300px; overflow: auto; }
+      /* Key column sizes to its label (often 1 char: x/y/z/w) instead of a fixed 110px, so nested
+         SE3 position/quaternion values get the width they need. ``fit-content`` caps long keys. */
+      .live-struct-row { display: grid; grid-template-columns: fit-content(88px) minmax(0, 1fr); gap: 4px; padding: 2px 0; border-top: 1px dotted #eee; }
+      .live-struct-row:first-of-type { border-top: none; }
+      .live-struct-key { color: #555; font-size: 11px; align-self: start; padding-top: 2px; word-break: break-word; }
+      .live-struct-val { min-width: 0; overflow-wrap: anywhere; }
+      /* Trim the padding/indent of nested structs so several SE3 levels don't eat the value width. */
+      .live-struct-val > .live-struct { padding: 2px 4px; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "https://esm.sh/react@18.3.1",
+          "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+          "@xyflow/react": "https://esm.sh/@xyflow/react@12?deps=react@18.3.1,react-dom@18.3.1",
+          "@dagrejs/dagre": "https://esm.sh/@dagrejs/dagre@1.1.4"
+        }
+      }
+    </script>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

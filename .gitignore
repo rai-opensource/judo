@@ -177,7 +177,7 @@ cython_debug/
 # see: https://github.com/google-deepmind/mujoco/issues/1292
 typings/
 
-# dora
+# graph runs / hydra outputs
 out/
 outputs/
 

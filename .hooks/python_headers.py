@@ -6,7 +6,9 @@ from datetime import datetime
 from pathlib import Path
 
 HEADER_TEMPLATE = "# Copyright (c) {year} Robotics and AI Institute LLC. All rights reserved."
-HEADER_REGEX = r"^# Copyright \(c\) (\d{4}) Robotics and AI Institute LLC\. All rights reserved\."
+# Also accepts a year range ("2025-2026", checked by its first year) and the "dba RAI Institute" trade name used by
+# code vendored from other RAI repos (e.g. judo/unlocked from starfish).
+HEADER_REGEX = r"^# Copyright \(c\) (\d{4})(?:-\d{4})? Robotics and AI Institute LLC(?: dba RAI Institute)?\. All rights reserved\."
 
 
 def get_header_year(lines: list[str]) -> int | None:

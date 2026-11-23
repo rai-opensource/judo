@@ -1,5 +1,7 @@
 default_language_version:
   python: python3
+# vendored from starfish (deploy/unlocked) and kept identical to it, so it follows starfish's lint rules, not judo's
+exclude: ^judo/unlocked/
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v5.0.0

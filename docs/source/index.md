@@ -61,7 +61,7 @@
 
 - 👩‍💻 A simple interface for defining custom tasks and controllers.
 - 🤖 Automatic parsing of configs into a browser-based GUI, allowing real-time parameter tuning.
-- 📬 Asynchronous interprocess communication using `dora <https://dora-rs.ai/>`_ for easy integration with your hardware.
+- 📬 Asynchronous interprocess communication using the built-in `unlocked` shared-memory dataflow runtime for easy integration with your hardware.
 - 🗂️ Configuration management with `hydra <https://hydra.cc/docs/intro/>`_ for maximum flexibility.
 
 > ⚠️ **Disclaimer** ⚠️

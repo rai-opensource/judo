@@ -2,7 +2,7 @@
 
 The design of `judo` is built around two blocks: a "system" block (here, the simulator, but could be your hardware setup), and a "controller" block, which contains a task and an optimizer.
 
-The `SimulationNode` class is a `dora` node that steps forward a MuJoCo system as specified by a provided XML. In particular, we currently only support Lagrangian dynamics with rigid bodies and stateless actuators (technically, we support anything MuJoCo supports, but we have not rigorously tested more exotic features).
+The `SimulationNode` class is an `unlocked` node that steps forward a MuJoCo system as specified by a provided XML. In particular, we currently only support Lagrangian dynamics with rigid bodies and stateless actuators (technically, we support anything MuJoCo supports, but we have not rigorously tested more exotic features).
 
 It may be possible to extend this to other simulation backends, but we do not have urgent plans to do so. If this is something you are interested in, please open an issue or a pull request.
 

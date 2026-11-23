@@ -78,7 +78,7 @@ if __name__ == "__main__":
 ## 3. Running `judo` as a Dependency
 You can easily install `judo` as a dependency in your own project. A few comments:
 * You can still use the `judo` CLI command from anywhere, so long as you are working in an environment where `judo` is installed.
-* If you do this, you should use the `hydra` configuration system to do things like registering custom tasks and optimizers, modifying the `dora` nodes in the sim stack, etc. See the [Configuration with hydra](../interface/config_with_hydra#configuration-with-hydra) and [Config Registration](../interface/config_registration#config-registration) sections for more details.
+* If you do this, you should use the `hydra` configuration system to do things like registering custom tasks and optimizers, modifying the `unlocked` graph of the sim stack, etc. See the [Configuration with hydra](../interface/config_with_hydra#configuration-with-hydra) and [Config Registration](../interface/config_registration#config-registration) sections for more details.
 * You can also run the app programmatically, as shown above.
 
 ## 4. Benchmarking
